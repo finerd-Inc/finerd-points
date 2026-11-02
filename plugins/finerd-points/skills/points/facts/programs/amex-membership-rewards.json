@@ -1,0 +1,10 @@
+{
+  "schema": "finerd-points/program@1",
+  "id": "amex-membership-rewards",
+  "name": "American Express Membership Rewards",
+  "unit": "points",
+  "kind": "bank",
+  "expiry": null,
+  "checked_on": "2026-11-02",
+  "sources": {}
+}

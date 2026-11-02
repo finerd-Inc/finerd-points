@@ -1,0 +1,10 @@
+{
+  "schema": "finerd-points/program@1",
+  "id": "chase-ultimate-rewards",
+  "name": "Chase Ultimate Rewards",
+  "unit": "points",
+  "kind": "bank",
+  "expiry": null,
+  "checked_on": "2026-11-02",
+  "sources": {}
+}

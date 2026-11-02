@@ -1,0 +1,10 @@
+{
+  "schema": "finerd-points/program@1",
+  "id": "bilt-rewards",
+  "name": "Bilt Rewards",
+  "unit": "points",
+  "kind": "other",
+  "expiry": null,
+  "checked_on": "2026-11-02",
+  "sources": {}
+}

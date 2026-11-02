@@ -1,0 +1,85 @@
+{
+ "contract": "finerd-points/transactions@1",
+ "source": {
+  "app": "csv",
+  "fetched_at": "2026-11-02T11:17:15+00:00"
+ },
+ "accounts": [
+  {
+   "account_id": "Business Gold",
+   "name": "Business Gold",
+   "coverage": {
+    "from": "2026-01-01",
+    "to": "2026-11-02"
+   },
+   "complete": true,
+   "coverage_note": null
+  }
+ ],
+ "transactions": [
+  {
+   "id": "csv-1",
+   "account_id": "Business Gold",
+   "date": "2026-02-01",
+   "posted_date": null,
+   "amount": 31.0,
+   "currency": "USD",
+   "direction": "debit",
+   "kind": "purchase",
+   "description": "UPS STORE 0420",
+   "merchant": null,
+   "category": null,
+   "pending": false,
+   "reversal_of": null,
+   "reversal_hint": false
+  },
+  {
+   "id": "csv-2",
+   "account_id": "Business Gold",
+   "date": "2026-02-03",
+   "posted_date": null,
+   "amount": 20.0,
+   "currency": "USD",
+   "direction": "credit",
+   "kind": "credit",
+   "description": "AMEX FLEXIBLE BUSINESS CREDIT UPS",
+   "merchant": null,
+   "category": null,
+   "pending": false,
+   "reversal_of": null,
+   "reversal_hint": false
+  },
+  {
+   "id": "csv-3",
+   "account_id": "Business Gold",
+   "date": "2026-05-10",
+   "posted_date": null,
+   "amount": 216.0,
+   "currency": "USD",
+   "direction": "debit",
+   "kind": "purchase",
+   "description": "SQUARESPACE INC",
+   "merchant": null,
+   "category": null,
+   "pending": false,
+   "reversal_of": null,
+   "reversal_hint": false
+  },
+  {
+   "id": "csv-4",
+   "account_id": "Business Gold",
+   "date": "2026-05-14",
+   "posted_date": null,
+   "amount": 150.0,
+   "currency": "USD",
+   "direction": "credit",
+   "kind": "credit",
+   "description": "SQUARESPACE STATEMENT CREDIT",
+   "merchant": null,
+   "category": null,
+   "pending": false,
+   "reversal_of": null,
+   "reversal_hint": false
+  }
+ ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema": "finerd-points/program@1",
+  "id": "hilton-honors",
+  "name": "Hilton Honors",
+  "unit": "points",
+  "kind": "hotel",
+  "expiry": null,
+  "checked_on": "2026-11-02",
+  "sources": {}
+}

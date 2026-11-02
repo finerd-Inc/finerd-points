@@ -1,0 +1,787 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "bilt-palladium",
+  "name": "Bilt Palladium Card",
+  "issuer": "Bilt",
+  "country": "US",
+  "segment": "personal",
+  "currency": "USD",
+  "rewards_program": "bilt-rewards",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 495,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Announced 2026-01-14; card operation began 2026-02-07.",
+      "sources": [
+        "B1",
+        "B3"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "bilt-travel-hotel-credit",
+      "name": "Bilt Travel hotel credit",
+      "kind": "statement_credit",
+      "amount": 200,
+      "period": "half_year",
+      "annual_max": 400,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Opt in while booking.",
+      "qualifying": "Bilt Travel hotel booking of 2+ nights paid with the Palladium card; the booking-period allowance applies.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Prepaid bookings show a reduced checkout charge; pay-at-hotel bookings get a statement credit after the stay (allow 8-10 weeks). No rollover. The 2027 package replaces it for most accounts (see upcoming changes). Prepaid bookings show only a reduced checkout charge, so use is confirmed by the person.",
+      "sources": [
+        "B1",
+        "B3",
+        "B4"
+      ]
+    },
+    {
+      "id": "annual-bilt-cash",
+      "name": "Annual Bilt Cash",
+      "kind": "wallet_credit",
+      "amount": 200,
+      "period": "card_year",
+      "annual_max": 200,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "Primary account in good standing.",
+      "evidence": "wallet",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Granted at account opening and on each card anniversary under the 2026-10-27 terms; older marketing and reviews said January 1 / calendar year. Each Bilt Cash award expires at the end of the month 12 months after it was earned (11:59 p.m. Pacific), including already-earned 2026 cash; older sources said December 31 with up to $100 rollover. Shown in the Bilt wallet, not as a bank credit.",
+      "sources": [
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5"
+      ]
+    },
+    {
+      "id": "priority-pass",
+      "name": "Priority Pass membership",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll; an eligible paid additional cardholder needs a separate membership.",
+      "qualifying": "Participating lounges; the holder plus 2 complimentary guests. Restaurant credits are excluded in the cited review.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "B3",
+        "B4"
+      ]
+    },
+    {
+      "id": "bilt-cash-earning-option",
+      "name": "Bilt Cash earning option",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Select the Flexible rewards mode.",
+      "qualifying": "Eligible nonhousing everyday purchases earn 4% Bilt Cash alongside card points.",
+      "evidence": "wallet",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Applies to the current Flexible Bilt Cash mode.",
+      "sources": [
+        "B3",
+        "B4",
+        "B7"
+      ]
+    },
+    {
+      "id": "bilt-cash-milestone",
+      "name": "Bilt Cash milestone",
+      "kind": "wallet_credit",
+      "amount": 50,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "$50 for every 25,000 qualifying Bilt Points earned toward elite status.",
+      "evidence": "wallet",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "A program-wide benefit, not specific to this card.",
+      "sources": [
+        "B5"
+      ]
+    },
+    {
+      "id": "point-accelerator",
+      "name": "Point Accelerator",
+      "kind": "other",
+      "amount": null,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate it; Flexible mode is required under the current 2026 rules.",
+      "qualifying": "Spend $200 of Bilt Cash to earn +1x on the next $5,000 of eligible everyday purchases; housing and specified excluded payments do not count.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Up to 5 activations per calendar year; an unused earning window expires December 31.",
+      "sources": [
+        "B2",
+        "B7"
+      ]
+    },
+    {
+      "id": "housing-points",
+      "name": "Housing points",
+      "kind": "other",
+      "amount": null,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Choose a rewards mode.",
+      "qualifying": "Eligible rent or mortgage payments plus a qualifying ratio of everyday spend.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Housing-only mode earns 0.5x, 0.75x, 1x or 1.25x when everyday spend reaches 25%, 50%, 75% or 100% of the housing payment; below the first tier the stated floor is 250 points. Flexible mode lets you redeem $3 of Bilt Cash for 100 housing points, up to 1x. Points, not statement credits.",
+      "sources": [
+        "B1",
+        "B3",
+        "B7"
+      ]
+    },
+    {
+      "id": "rent-day-promotions",
+      "name": "Rent Day and status-program access",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "unknown",
+      "enrollment_how": "May require activation.",
+      "qualifying": "Offers shown in the Bilt app.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Points, booking access or partner discounts; a fixed guaranteed value was not found.",
+      "sources": [
+        "B3",
+        "B5"
+      ]
+    },
+    {
+      "id": "redeem-grubhub-seamless",
+      "name": "Bilt Cash: Grubhub / Seamless",
+      "kind": "redemption_option",
+      "amount": 10,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem Bilt Cash.",
+      "qualifying": "Eligible restaurant delivery; pickup, catering, alcohol and Wonder are excluded.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover. Delivered as an emailed promo code that expires at month-end.",
+      "sources": [
+        "B2",
+        "B5"
+      ]
+    },
+    {
+      "id": "redeem-lyft",
+      "name": "Bilt Cash: Lyft",
+      "kind": "redemption_option",
+      "amount": 10,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Link Lyft, then redeem.",
+      "qualifying": "Eligible rides.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover. Appears as a Lyft Pass balance that expires at month-end.",
+      "sources": [
+        "B2",
+        "B7"
+      ]
+    },
+    {
+      "id": "redeem-walgreens",
+      "name": "Bilt Cash: Walgreens",
+      "kind": "redemption_option",
+      "amount": 10,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem Bilt Cash.",
+      "qualifying": "Eligible Walgreens purchases.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover. Issued as a digital gift card in the Bilt app, valid 30 days.",
+      "sources": [
+        "B2",
+        "B7"
+      ]
+    },
+    {
+      "id": "redeem-bilt-home-delivery",
+      "name": "Bilt Cash: Bilt Home Delivery",
+      "kind": "redemption_option",
+      "amount": 5,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem at checkout.",
+      "qualifying": "Eligible Gopuff-powered Bilt orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover.",
+      "sources": [
+        "B5",
+        "B7"
+      ]
+    },
+    {
+      "id": "redeem-mobile-dining-checkout",
+      "name": "Bilt Cash: Mobile Dining Checkout",
+      "kind": "redemption_option",
+      "amount": 25,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Use a participating checkout.",
+      "qualifying": "Eligible Bilt dining partners; one visit.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover.",
+      "sources": [
+        "B5",
+        "B9"
+      ]
+    },
+    {
+      "id": "redeem-dining-experiences",
+      "name": "Bilt Cash: dining experiences",
+      "kind": "redemption_option",
+      "amount": 50,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem while booking.",
+      "qualifying": "Eligible Bilt experiences.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover.",
+      "sources": [
+        "B5",
+        "B9"
+      ]
+    },
+    {
+      "id": "redeem-comedy-experiences",
+      "name": "Bilt Cash: comedy experiences",
+      "kind": "redemption_option",
+      "amount": 50,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem while booking.",
+      "qualifying": "Eligible Bilt comedy experiences.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover.",
+      "sources": [
+        "B5",
+        "B9"
+      ]
+    },
+    {
+      "id": "redeem-fitness-class",
+      "name": "Bilt Cash: fitness class",
+      "kind": "redemption_option",
+      "amount": 40,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Book through Bilt.",
+      "qualifying": "One eligible class, including participating Barry's and SoulCycle locations.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover.",
+      "sources": [
+        "B5",
+        "B10"
+      ]
+    },
+    {
+      "id": "redeem-hotel",
+      "name": "Bilt Cash: Bilt Travel hotel",
+      "kind": "redemption_option",
+      "amount": 100,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem during booking.",
+      "qualifying": "Bilt Travel hotel booking of 2+ nights.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": "2026-12-31",
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover. Monthly through 2026-12-31; $50 for Blue and Silver, $100 for Gold and Platinum. Prepaid bookings get a discount; pay-at-hotel bookings get a statement credit after the stay. Separate from the card's $400 hotel benefit.",
+      "sources": [
+        "B2",
+        "B7"
+      ]
+    },
+    {
+      "id": "redeem-home-away-from-home",
+      "name": "Bilt Cash: Home Away From Home access",
+      "kind": "redemption_option",
+      "amount": null,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem access.",
+      "qualifying": "Participating luxury hotels; for Gold and Platinum this access is a status benefit.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover. Costs $95 of Bilt Cash for one eligible booking a month for Blue and Silver members; property benefits vary.",
+      "sources": [
+        "B5",
+        "B7"
+      ]
+    },
+    {
+      "id": "redeem-lounge-guests",
+      "name": "Bilt Cash: additional lounge guests",
+      "kind": "redemption_option",
+      "amount": 35,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem in Bilt.",
+      "qualifying": "Eligible extra lounge guests, $35 each, up to 2 ($70).",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover. The detailed terms describe LoungeKey guest passes; the support page wording differs (see disagreements).",
+      "sources": [
+        "B2",
+        "B5"
+      ]
+    },
+    {
+      "id": "redeem-blade",
+      "name": "Bilt Cash: BLADE",
+      "kind": "redemption_option",
+      "amount": 350,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Book and redeem in Bilt.",
+      "qualifying": "Eligible airport-flight seats, $350 per seat; unused value is forfeited.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit. 2 redemptions per calendar year; resets January 1.",
+      "sources": [
+        "B2",
+        "B7"
+      ]
+    },
+    {
+      "id": "redeem-blacklane",
+      "name": "Bilt Cash: Blacklane",
+      "kind": "redemption_option",
+      "amount": 150,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Book and redeem in Bilt.",
+      "qualifying": "Eligible rides.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit. One redemption per calendar year: $50 for Blue and Silver, $100 for Gold, $150 for Platinum.",
+      "sources": [
+        "B2",
+        "B10"
+      ]
+    },
+    {
+      "id": "redeem-equinox",
+      "name": "Bilt Cash: Equinox",
+      "kind": "redemption_option",
+      "amount": 150,
+      "period": "half_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an active Equinox membership; link the accounts; minimum $50 redemption.",
+      "qualifying": "Personal training, Pilates and spa; membership dues are not covered.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit. $75 for Blue, $100 for Silver, $150 for Gold and Platinum per half-year; unused credit expires.",
+      "sources": [
+        "B11",
+        "B12"
+      ]
+    },
+    {
+      "id": "redeem-thumbtack",
+      "name": "Bilt Cash: Thumbtack",
+      "kind": "redemption_option",
+      "amount": 50,
+      "period": "half_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Use the Bilt booking flow; evidence is required for eligible direct bookings.",
+      "qualifying": "Qualifying Thumbtack jobs.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit. Up to $50 per half-year, one redemption each; applied as a checkout reduction or a verified digital-check reimbursement.",
+      "sources": [
+        "B2"
+      ]
+    },
+    {
+      "id": "redeem-design-collection",
+      "name": "Bilt Cash: Bilt Design Collection",
+      "kind": "redemption_option",
+      "amount": 10,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Redeem.",
+      "qualifying": "Eligible collection purchases.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems existing Bilt Cash, not an extra credit on top of the $200 grant. Monthly allowances reset at midnight Pacific on the first, with no unused rollover.",
+      "sources": [
+        "B5",
+        "B7"
+      ]
+    },
+    {
+      "id": "redeem-transfer-bonus-upgrade",
+      "name": "Bilt Cash: transfer-bonus upgrade",
+      "kind": "redemption_option",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate or redeem.",
+      "qualifying": "Eligible transfer promotion during an applicable Rent Day offer.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": "bilt-cash-redemptions",
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Redeems Bilt Cash for additional partner points; cost and value vary.",
+      "sources": [
+        "B5",
+        "B7"
+      ]
+    }
+  ],
+  "certificates": [],
+  "thresholds": [
+    {
+      "id": "silver-fast-track",
+      "spend": 10000,
+      "period": "calendar_year",
+      "unlocks": "Bilt Silver status by fast track ($10,000 of qualifying spend or 50,000 qualifying points). Housing is excluded from the spend route.",
+      "sources": [
+        "B6"
+      ]
+    },
+    {
+      "id": "gold-fast-track",
+      "spend": 25000,
+      "period": "calendar_year",
+      "unlocks": "Bilt Gold status by fast track ($25,000 of qualifying spend or 125,000 qualifying points). Housing is excluded from the spend route.",
+      "sources": [
+        "B6"
+      ]
+    },
+    {
+      "id": "platinum-fast-track",
+      "spend": 50000,
+      "period": "calendar_year",
+      "unlocks": "Bilt Platinum status by fast track ($50,000 of qualifying spend or 200,000 qualifying points). Housing is excluded from the spend route.",
+      "sources": [
+        "B6"
+      ]
+    },
+    {
+      "id": "4k-gold-welcome",
+      "spend": 4000,
+      "period": "one_time",
+      "unlocks": "Acquisition offer: Bilt Gold after $4,000 of eligible nonhousing spend within 90 days (the initial February cohort had a 97-day window). Not permanent automatic Gold.",
+      "sources": [
+        "B1",
+        "B3"
+      ]
+    }
+  ],
+  "disagreements": [
+    {
+      "topic": "Additional lounge guests",
+      "values": [
+        {
+          "value": "Up to $70 of Priority Pass statement credits (Bilt support page).",
+          "sources": [
+            "B5"
+          ]
+        },
+        {
+          "value": "LoungeKey guest passes with short validity (detailed Bilt Cash terms).",
+          "sources": [
+            "B2"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "Bilt Design Collection monthly amount",
+      "values": [
+        {
+          "value": "$20 a month.",
+          "sources": [
+            "B7"
+          ]
+        },
+        {
+          "value": "$10 a month (current Bilt support).",
+          "sources": [
+            "B5"
+          ]
+        }
+      ]
+    }
+  ],
+  "upcoming_changes": [
+    {
+      "effective_from": "2027-01-01",
+      "summary": "From the first card anniversary on or after 2027-01-01, $600 of annual Bilt Cash replaces the $200 cash plus $400 hotel package, unless the customer makes the permitted legacy election. $600 is not the current allowance.",
+      "sources": [
+        "B1",
+        "B8"
+      ]
+    },
+    {
+      "effective_from": "2027-01-01",
+      "summary": "Bilt Cash hotel redemptions move from monthly to a twice-yearly structure; this is separate from the card's $400 hotel benefit.",
+      "sources": [
+        "B2",
+        "B5"
+      ]
+    },
+    {
+      "effective_from": null,
+      "summary": "A $5 a month parking redemption is labeled 'coming soon' on Bilt support and is not counted as an available benefit.",
+      "sources": [
+        "B5"
+      ]
+    }
+  ],
+  "sources": {
+    "B1": {
+      "title": "Bilt card offer terms",
+      "url": "https://www.biltrewards.com/terms/bilt-card-offer-terms",
+      "publisher": "Bilt",
+      "kind": "program",
+      "published": "2026-10-27",
+      "checked_on": "2026-11-02"
+    },
+    "B2": {
+      "title": "Bilt Cash terms",
+      "url": "https://www.biltrewards.com/terms/bilt-cash",
+      "publisher": "Bilt",
+      "kind": "program",
+      "published": "2026-10-27",
+      "checked_on": "2026-11-02"
+    },
+    "B3": {
+      "title": "Bilt Palladium Card review",
+      "url": "https://onemileatatime.com/bilt-palladium-card/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-10-22",
+      "checked_on": "2026-11-02"
+    },
+    "B4": {
+      "title": "Bilt Palladium Card review",
+      "url": "https://upgradedpoints.com/credit-cards/reviews/bilt-palladium-card/",
+      "publisher": "Upgraded Points",
+      "kind": "review",
+      "published": "2026-06-17",
+      "checked_on": "2026-11-02"
+    },
+    "B5": {
+      "title": "Bilt Cash support article",
+      "url": "https://support.biltrewards.com/hc/en-us/articles/40132420650509-Bilt-Cash",
+      "publisher": "Bilt",
+      "kind": "program",
+      "published": "2026-10-27",
+      "checked_on": "2026-11-02"
+    },
+    "B6": {
+      "title": "How to earn Bilt Elite Status",
+      "url": "https://support.biltrewards.com/hc/en-us/articles/5536520671117-How-do-you-earn-Bilt-Elite-Status",
+      "publisher": "Bilt",
+      "kind": "program",
+      "published": "2026-10-09",
+      "checked_on": "2026-11-02"
+    },
+    "B7": {
+      "title": "Bilt Cash: how to earn and redeem",
+      "url": "https://thepointsguy.com/credit-cards/bilt-cash-earn-and-redeem",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "B8": {
+      "title": "Bilt 2027 program updates",
+      "url": "https://newsroom.biltrewards.com/2027-bilt-program-updates",
+      "publisher": "Bilt",
+      "kind": "program",
+      "published": "2026-10-27",
+      "checked_on": "2026-11-02"
+    },
+    "B9": {
+      "title": "Bilt Cash redemptions announcement",
+      "url": "https://newsroom.biltrewards.com/biltcashredemptions",
+      "publisher": "Bilt",
+      "kind": "program",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "B10": {
+      "title": "Best ways to use Bilt Cash",
+      "url": "https://thepointsguy.com/credit-cards/bilt-cash-best-ways-to-use",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "B11": {
+      "title": "Equinox and Bilt partner terms",
+      "url": "https://www.equinox.com/bilt",
+      "publisher": "Equinox",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "B12": {
+      "title": "Bilt partners with Equinox: Bilt Cash for spa, classes and training",
+      "url": "https://frequentmiler.com/bilt-partners-with-equinox-use-bilt-cash-for-spa-services-classes-or-personal-training/",
+      "publisher": "Frequent Miler",
+      "kind": "review",
+      "published": "2026-08-20",
+      "checked_on": "2026-11-02"
+    },
+    "B13": {
+      "title": "Bilt launch-readiness announcement for the new card",
+      "url": "https://newsroom.biltrewards.com/getreadynewbiltcard",
+      "publisher": "Bilt",
+      "kind": "program",
+      "published": "2026-02-06",
+      "checked_on": "2026-11-02"
+    }
+  }
+}

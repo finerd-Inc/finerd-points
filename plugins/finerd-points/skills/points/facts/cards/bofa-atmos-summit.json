@@ -1,0 +1,500 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "bofa-atmos-summit",
+  "name": "Atmos Rewards Summit Visa Infinite Card",
+  "issuer": "Bank of America",
+  "country": "US",
+  "segment": "personal",
+  "currency": "USD",
+  "rewards_program": "atmos-rewards",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 395,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The card launched 2025-08-20 as a new premium product; the former mainstream Alaska Visa became Atmos Ascent, so its $99 companion-fare rules do not apply to Summit.",
+      "sources": [
+        "A1",
+        "A4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "alaska-lounge-passes",
+      "name": "Alaska Lounge passes",
+      "kind": "other",
+      "amount": null,
+      "period": "quarter",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an Atmos account; passes are issued to it.",
+      "qualifying": "Alaska Lounges with eligible same-day travel; each pass covers one adult and up to two children under 21.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "8 passes a year, 2 per quarter, issued Jan. 1, Apr. 1, July 1 and Oct. 1 and expiring at quarter-end.",
+      "sources": [
+        "A1",
+        "A2"
+      ]
+    },
+    {
+      "id": "wifi-passes",
+      "name": "Wi-Fi passes",
+      "kind": "other",
+      "amount": null,
+      "period": "quarter",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Use the pass issued to the account.",
+      "qualifying": "Eligible paid onboard Wi-Fi.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "8 passes a year, 2 per quarter, expiring at quarter-end.",
+      "sources": [
+        "A2",
+        "A3"
+      ]
+    },
+    {
+      "id": "lounge-premium-drinks",
+      "name": "Lounge premium drinks",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Present the eligible card.",
+      "qualifying": "Eligible Alaska Lounge signature cocktails and elevated bar selections.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2026-12-31",
+      "note": "2 eligible drinks per visit; the published offer runs through 2026.",
+      "sources": [
+        "A2",
+        "A4"
+      ]
+    },
+    {
+      "id": "first-checked-bag",
+      "name": "First checked bag",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Include the Atmos number and pay the airfare with the card.",
+      "qualifying": "First bag for the holder and up to 6 companions on the same reservation, on eligible Alaska and Hawaiian flights.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The checked-bag fee is avoided.",
+      "sources": [
+        "A1",
+        "A3"
+      ]
+    },
+    {
+      "id": "preferred-boarding",
+      "name": "Preferred boarding",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Include the Atmos number and pay the airfare with the card.",
+      "qualifying": "Holder and up to 6 companions on eligible Alaska and Hawaiian flights.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Current Bank of America wording includes Hawaiian; some older reviews limit it to Alaska-operated flights.",
+      "sources": [
+        "A1",
+        "A2",
+        "A3"
+      ]
+    },
+    {
+      "id": "inflight-rebate",
+      "name": "Inflight purchase rebate (20%)",
+      "kind": "percentage_credit",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Pay with the card.",
+      "qualifying": "Alaska onboard food, beverages and Wi-Fi (as described by Frequent Miler).",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "ALASKA"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "20% back per eligible purchase; the cap was not found and the issuer's own confirmation was not found in accessible material.",
+      "sources": [
+        "A2"
+      ]
+    },
+    {
+      "id": "same-day-change-waiver",
+      "name": "Same-day confirmed change waiver",
+      "kind": "other",
+      "amount": 75,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Use the eligible linked card and account.",
+      "qualifying": "Qualifying Alaska flights; restrictive fares may be excluded.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The change fee is waived; the issuer quotes savings of up to $75 for each eligible change.",
+      "sources": [
+        "A1"
+      ]
+    },
+    {
+      "id": "partner-award-fee-waiver",
+      "name": "Partner award booking-fee waiver",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Use an eligible Summit-linked account.",
+      "qualifying": "Qualifying partner awards booked through Atmos.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The fee is omitted at award checkout. Its dollar amount is not published by Bank of America on the inspected page; launch-era references show $12.50 each way and newer coverage shows $20 each way.",
+      "sources": [
+        "A1",
+        "A2",
+        "A5"
+      ]
+    },
+    {
+      "id": "global-entry-tsa",
+      "name": "Global Entry / TSA PreCheck credit",
+      "kind": "statement_credit",
+      "amount": 120,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Charge the application fee to the card.",
+      "qualifying": "Eligible Global Entry or TSA PreCheck fee; NEXUS is not listed.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "GLOBAL ENTRY",
+          "TSA"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Up to $120, available once every 4 years.",
+      "sources": [
+        "A1",
+        "A2",
+        "A3"
+      ]
+    },
+    {
+      "id": "travel-delay-credit",
+      "name": "Instant travel-delay credit",
+      "kind": "other",
+      "amount": 50,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Eligible booking, card and account details are required.",
+      "qualifying": "Qualifying directly booked Alaska travel with a cancellation or a departure delay of 2+ hours; the voucher works only at eligible U.S. merchants.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Arrives as an emailed voucher that generally expires after 48 hours; not an ordinary statement credit.",
+      "sources": [
+        "A2",
+        "A3"
+      ]
+    },
+    {
+      "id": "anniversary-status-points",
+      "name": "Anniversary status points",
+      "kind": "other",
+      "amount": null,
+      "period": "card_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Linked Atmos account.",
+      "qualifying": "Primary account.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "10,000 status points each account anniversary.",
+      "sources": [
+        "A1",
+        "A3"
+      ]
+    },
+    {
+      "id": "spending-status-points",
+      "name": "Spending status points",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "Eligible card purchases: 1 status point per $2, uncapped, counted in the status-qualification year.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The card does not confer automatic elite status. Published 2026 Atmos thresholds are Silver 20,000, Gold 40,000, Platinum 80,000 and Titanium 135,000 status points; card spending and anniversary points count toward them.",
+      "sources": [
+        "A2",
+        "A3",
+        "A6"
+      ]
+    },
+    {
+      "id": "bofa-relationship-bonus",
+      "name": "Bank of America relationship bonus",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an eligible Bank of America account relationship.",
+      "qualifying": "Qualifying card-earned purchase points.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "10% additional purchase points while eligible.",
+      "sources": [
+        "A1",
+        "A3"
+      ]
+    },
+    {
+      "id": "points-sharing",
+      "name": "Points sharing",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Establish a points-sharing network.",
+      "qualifying": "Eligible Atmos accounts: share with up to 10 additional members.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "A1",
+        "A2"
+      ]
+    },
+    {
+      "id": "visa-infinite-privileges",
+      "name": "Visa Infinite hotel and rental privileges",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "unknown",
+      "enrollment_how": "Program-specific enrollment or booking.",
+      "qualifying": "Participating hotel collection and rental partners.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Fixed credit or status values were not found in accessible issuer material. Rental-status descriptions conflict in secondary material and no tier is assumed.",
+      "sources": [
+        "A1",
+        "A2"
+      ]
+    }
+  ],
+  "certificates": [
+    {
+      "id": "anniversary-global-companion",
+      "name": "Anniversary Global Companion Award",
+      "trigger": "card_anniversary",
+      "spend_threshold": null,
+      "value_cap": "25,000-point discount on the companion's eligible award fare; points cover any excess and taxes and fees remain payable.",
+      "valid_months": 12,
+      "note": "Needs an eligible award booking for two travelers on the same itinerary; eligible partner and premium-cabin awards count. Generally must be booked within 12 months of issuance and travel can happen later. Unused value is forfeited; cancellation normally restores the original expiration.",
+      "sources": [
+        "A1",
+        "A2",
+        "A3"
+      ]
+    },
+    {
+      "id": "spending-global-companion",
+      "name": "Spending Global Companion Award",
+      "trigger": "spend_threshold",
+      "spend_threshold": 60000,
+      "value_cap": "100,000-point discount on the companion's eligible award fare; points cover any excess and taxes and fees remain payable.",
+      "valid_months": 12,
+      "note": "Earned after $60,000 of eligible net purchases in the account anniversary year, not the calendar year. Same booking and forfeiture rules as the anniversary award.",
+      "sources": [
+        "A1",
+        "A2"
+      ]
+    },
+    {
+      "id": "welcome-global-companion",
+      "name": "Welcome Global Companion Award",
+      "trigger": "welcome_offer",
+      "spend_threshold": 4000,
+      "value_cap": "25,000-point discount on the companion's eligible award fare.",
+      "valid_months": null,
+      "note": "Acquisition offer seen on the public page: after $4,000 of spending within 90 days. Not an annual benefit. A validity period for this award alone was not stated.",
+      "sources": [
+        "A1"
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "id": "60k-spending-companion",
+      "spend": 60000,
+      "period": "card_year",
+      "unlocks": "Spending Global Companion Award (100,000-point discount).",
+      "sources": [
+        "A1",
+        "A2"
+      ]
+    },
+    {
+      "id": "4k-welcome-companion",
+      "spend": 4000,
+      "period": "one_time",
+      "unlocks": "Acquisition offer: additional 25,000-point Global Companion Award after $4,000 of spending within 90 days.",
+      "sources": [
+        "A1"
+      ]
+    }
+  ],
+  "disagreements": [
+    {
+      "topic": "Same-day confirmed change waiver value",
+      "values": [
+        {
+          "value": "$50 (older launch and review descriptions).",
+          "sources": [
+            "A4",
+            "A2"
+          ]
+        },
+        {
+          "value": "Up to $75 (current Bank of America product terms).",
+          "sources": [
+            "A1"
+          ]
+        }
+      ]
+    }
+  ],
+  "upcoming_changes": [],
+  "sources": {
+    "A1": {
+      "title": "Atmos Rewards Summit Visa Infinite product terms",
+      "url": "https://www.bankofamerica.com/credit-cards/products/alaska-airlines-infinite-credit-card/",
+      "publisher": "Bank of America",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "A2": {
+      "title": "Atmos Rewards Summit Visa Infinite full review",
+      "url": "https://frequentmiler.com/alaskas-atmos-rewards-summit-visa-infinite-card-review/",
+      "publisher": "Frequent Miler",
+      "kind": "review",
+      "published": "2026-02-06",
+      "checked_on": "2026-11-02"
+    },
+    "A3": {
+      "title": "Atmos Rewards Summit card review",
+      "url": "https://thepointsguy.com/credit-cards/reviews/atmos-rewards-summit-card-review",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": "2026-10-22",
+      "checked_on": "2026-11-02"
+    },
+    "A4": {
+      "title": "Alaska Airlines and Bank of America present a new premium credit card",
+      "url": "https://newsroom.bankofamerica.com/content/newsroom/press-releases/2025/08/alaska-airlines-and-bank-of-america-present-a-new-premium-credit.html",
+      "publisher": "Bank of America",
+      "kind": "issuer",
+      "published": "2025-08-20",
+      "checked_on": "2026-11-02"
+    },
+    "A5": {
+      "title": "Atmos Rewards Summit partner award booking fee waiver guide",
+      "url": "https://onemileatatime.com/guides/atmos-rewards-summit-card-partner-award-booking-fee-waiver/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "A6": {
+      "title": "Atmos Rewards 2026 status earning and perks announcement",
+      "url": "https://news.alaskaair.com/loyalty/atmos-rewards-2026-expanded-status-earning-bew-partnerships-and-exclusive-perks-announced/",
+      "publisher": "Alaska Airlines",
+      "kind": "program",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  }
+}

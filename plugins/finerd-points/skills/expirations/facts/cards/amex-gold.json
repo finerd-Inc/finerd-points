@@ -1,0 +1,352 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "amex-gold",
+  "name": "American Express Gold Card",
+  "issuer": "American Express",
+  "country": "US",
+  "segment": "personal",
+  "currency": "USD",
+  "rewards_program": "amex-membership-rewards",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 325,
+      "effective_from": "2024-07-25",
+      "effective_to": null,
+      "note": "New applicants from 2024-07-25; existing accounts at renewal from 2024-10-01.",
+      "sources": [
+        "G1",
+        "G4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "dining-credit-until-2026-06",
+      "name": "Dining credit",
+      "kind": "statement_credit",
+      "amount": 10,
+      "period": "month",
+      "annual_max": 120,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "U.S. Grubhub/Seamless, Buffalo Wild Wings, Five Guys, The Cheesecake Factory and Wonder.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "BUFFALO WILD",
+          "CHEESECAKE",
+          "DINING",
+          "FIVE GUYS",
+          "GOLDBELLY",
+          "GRUBHUB",
+          "SEAMLESS",
+          "WINE.COM",
+          "WONDER"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2026-06-30",
+      "note": "Version before 2026-07-01: Goldbelly and Wine.com also qualified.",
+      "sources": [
+        "G1",
+        "G2",
+        "G3"
+      ]
+    },
+    {
+      "id": "dining-credit",
+      "name": "Dining credit",
+      "kind": "statement_credit",
+      "amount": 10,
+      "period": "month",
+      "annual_max": 120,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "U.S. Grubhub/Seamless, Buffalo Wild Wings, Five Guys, The Cheesecake Factory and Wonder.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "DINING",
+          "GRUBHUB",
+          "SEAMLESS",
+          "FIVE GUYS",
+          "CHEESECAKE",
+          "BUFFALO WILD",
+          "WONDER"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": "2026-07-01",
+      "effective_to": null,
+      "note": "Goldbelly and Wine.com stopped qualifying on 2026-07-01.",
+      "sources": [
+        "G1",
+        "G2",
+        "G3"
+      ]
+    },
+    {
+      "id": "resy-credit",
+      "name": "Resy credit",
+      "kind": "statement_credit",
+      "amount": 50,
+      "period": "half_year",
+      "annual_max": 100,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible U.S. restaurants marked as qualifying on Resy; eligible direct Tock prepaid reservations or deposits from 2026-09-15.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "RESY",
+          "TOCK"
+        ],
+        "verified": true
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The merchant's transaction date decides which half-year a purchase counts in. Description verified on a real statement credit (2026-07-10).",
+      "sources": [
+        "G1",
+        "G6"
+      ]
+    },
+    {
+      "id": "dunkin-credit",
+      "name": "Dunkin' credit",
+      "kind": "statement_credit",
+      "amount": 7,
+      "period": "month",
+      "annual_max": 84,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible purchases at U.S. Dunkin' locations.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "DUNKIN"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "G1",
+        "G2",
+        "G3"
+      ]
+    },
+    {
+      "id": "uber-cash",
+      "name": "Uber Cash",
+      "kind": "wallet_credit",
+      "amount": 10,
+      "period": "month",
+      "annual_max": 120,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Add the Gold Card to the Uber wallet and pay with an eligible Amex card.",
+      "qualifying": "U.S. Uber rides and Uber Eats.",
+      "evidence": "wallet",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Expires at month-end, 11:59 p.m. Hawaii time. The bank only sees the remaining paid amount, so use must be confirmed by the person.",
+      "sources": [
+        "G1",
+        "G7"
+      ]
+    },
+    {
+      "id": "hotel-collection",
+      "name": "The Hotel Collection property credit",
+      "kind": "folio_credit",
+      "amount": 100,
+      "period": "per_stay",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Book through Amex Travel; minimum two consecutive nights.",
+      "qualifying": "Property-designated dining, spa or other incidentals at participating hotels.",
+      "evidence": "folio",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "G1",
+        "G2"
+      ]
+    },
+    {
+      "id": "hertz-five-star",
+      "name": "Hertz Five Star status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll through Amex and register with Hertz.",
+      "qualifying": "Eligible Hertz rentals.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "G1",
+        "G5"
+      ]
+    },
+    {
+      "id": "venue-concessions",
+      "name": "Amex Venue Collection concessions",
+      "kind": "percentage_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": 250,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll one eligible Amex card per Card Member.",
+      "qualifying": "10% back on food and drink at participating stadium and arena concessions; tickets, parking and merchandise excluded.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "VENUE",
+          "CONCESSION",
+          "CONCESSIONS"
+        ]
+      },
+      "shared_group": "amex-venue-concessions",
+      "effective_from": null,
+      "effective_to": "2026-12-31",
+      "note": "One allowance per Card Member across all enrolled Amex cards.",
+      "sources": [
+        "AC"
+      ]
+    }
+  ],
+  "certificates": [],
+  "thresholds": [
+    {
+      "id": "dining-4x-cap",
+      "spend": 50000,
+      "period": "calendar_year",
+      "unlocks": "Restaurant purchases earn 4x up to this amount, then 1x.",
+      "sources": [
+        "G2",
+        "G3"
+      ]
+    },
+    {
+      "id": "supermarket-4x-cap",
+      "spend": 25000,
+      "period": "calendar_year",
+      "unlocks": "U.S. supermarket purchases earn 4x up to this amount, then 1x.",
+      "sources": [
+        "G2",
+        "G3"
+      ]
+    }
+  ],
+  "disagreements": [
+    {
+      "topic": "Tock purchases and the Resy credit",
+      "values": [
+        {
+          "value": "Eligible direct Tock purchases qualify from 2026-09-15.",
+          "sources": [
+            "G1",
+            "G6"
+          ]
+        },
+        {
+          "value": "Some Resy pages do not mention Tock.",
+          "sources": [
+            "G6"
+          ]
+        }
+      ]
+    }
+  ],
+  "upcoming_changes": [],
+  "sources": {
+    "AC": {
+      "title": "Amex Venue Collection concessions offer terms",
+      "url": "https://www.americanexpress.com/en-us/benefits/membership/experiences/venues/concessions-enrollment/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2026-06-05",
+      "checked_on": "2026-11-02"
+    },
+    "G1": {
+      "title": "Gold Card benefits and terms",
+      "url": "https://www.americanexpress.com/en-us/account/get-started/gold/explore-benefits",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "G2": {
+      "title": "Amex Gold Card review",
+      "url": "https://thepointsguy.com/credit-cards/reviews/amex-gold-card-review",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": "2026-05-01",
+      "checked_on": "2026-11-02"
+    },
+    "G3": {
+      "title": "Amex Gold Card review",
+      "url": "https://onemileatatime.com/reviews/credit-cards/american-express/amex-gold-card/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-04-30",
+      "checked_on": "2026-11-02"
+    },
+    "G4": {
+      "title": "Amex updates U.S. consumer Gold Card",
+      "url": "https://www.americanexpress.com/en-us/newsroom/articles/products-and-services/american-express--updates-u-s--consumer-gold-card-with-new-benef.html",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2024-07-25",
+      "checked_on": "2026-11-02"
+    },
+    "G5": {
+      "title": "Amex Gold Card unveils new and updated benefits",
+      "url": "https://www.nerdwallet.com/credit-cards/news/american-express-gold-card-unveils-new-and-updated-benefits",
+      "publisher": "NerdWallet",
+      "kind": "review",
+      "published": "2026-04-30",
+      "checked_on": "2026-11-02"
+    },
+    "G6": {
+      "title": "Amex Resy credit and Tock restaurants",
+      "url": "https://thepointsguy.com/news/amex-resy-credit-tock-restaurants",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": "2026-08-11",
+      "checked_on": "2026-11-02"
+    },
+    "G7": {
+      "title": "Uber and American Express",
+      "url": "https://www.uber.com/us/en/u/amex/",
+      "publisher": "Uber",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  }
+}

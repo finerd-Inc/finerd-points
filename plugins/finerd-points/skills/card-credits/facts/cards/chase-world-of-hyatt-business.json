@@ -1,0 +1,284 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "chase-world-of-hyatt-business",
+  "name": "World of Hyatt Business Credit Card",
+  "issuer": "Chase",
+  "country": "US",
+  "segment": "business",
+  "currency": "USD",
+  "rewards_program": "world-of-hyatt",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 199,
+      "effective_from": "2021-10-06",
+      "effective_to": null,
+      "note": "Introduced with the card on 2021-10-06.",
+      "sources": [
+        "HB1",
+        "HB4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "hyatt-credit",
+      "name": "Hyatt credit",
+      "kind": "statement_credit",
+      "amount": 50,
+      "period": "card_year",
+      "annual_max": 100,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "No separate activation.",
+      "qualifying": "Two separate qualifying Hyatt transactions of at least $50 each, one per $50 credit.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "HYATT"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Per account anniversary year, not a calendar-year $100 bucket. Chase says the credit date matches the eligible purchase date and the statement may show it after 1-2 cycles. Some summaries describe it as a simple $100 annual credit; the issuer specifies two $50 credits.",
+      "sources": [
+        "HB1",
+        "HB2",
+        "HB3"
+      ]
+    },
+    {
+      "id": "discoverist-status",
+      "name": "Discoverist status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Link a Hyatt account and designate gift recipients.",
+      "qualifying": "Hyatt loyalty program: status for the primary cardholder plus up to 5 employee gifts.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Primary status is ongoing; each gifted status lasts the rest of the calendar year plus 14 months. Annual reset or replenishment rules for the five gifts were not found. There are no automatic annual elite nights on this card.",
+      "sources": [
+        "HB1",
+        "HB3"
+      ]
+    },
+    {
+      "id": "spending-elite-night-credits",
+      "name": "Spending elite-night credits",
+      "kind": "other",
+      "amount": null,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "5 elite nights per $10,000 of eligible net purchases.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The spending counter resets January 1; no annual night cap. These nights can count toward Hyatt's separate Milestone Rewards.",
+      "sources": [
+        "HB1",
+        "HB2",
+        "HB3"
+      ]
+    },
+    {
+      "id": "redemption-rebate",
+      "name": "Award redemption rebate",
+      "kind": "other",
+      "amount": null,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic once qualified.",
+      "qualifying": "10% of the first 200,000 eligible points redeemed after reaching $50,000 of spend, up to 20,000 points returned, through December 31 of that year; award activity must meet timing rules.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Points are returned to the Hyatt account.",
+      "sources": [
+        "HB1",
+        "HB2",
+        "HB3"
+      ]
+    },
+    {
+      "id": "hyatt-leverage",
+      "name": "Hyatt Leverage",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Register the business in Leverage.",
+      "qualifying": "Participating hotels and qualifying rates.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Up to 15% off eligible standard rates. A reduced hotel rate, not a statement credit.",
+      "sources": [
+        "HB1",
+        "HB3"
+      ]
+    },
+    {
+      "id": "dashpass",
+      "name": "DoorDash DashPass",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activation required by 2027-12-31.",
+      "qualifying": "Eligible DoorDash and Caviar orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "12 complimentary months, then a paid renewal.",
+      "sources": [
+        "HB1"
+      ]
+    },
+    {
+      "id": "doordash-nonrestaurant-discount",
+      "name": "DoorDash nonrestaurant discount",
+      "kind": "other",
+      "amount": 10,
+      "period": "quarter",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an active eligible DashPass; apply the promotion.",
+      "qualifying": "Eligible nonrestaurant orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "No carryover. Applied at checkout.",
+      "sources": [
+        "HB1"
+      ]
+    },
+    {
+      "id": "early-award-booking",
+      "name": "Early award booking",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Linked eligible Hyatt account.",
+      "qualifying": "Eligible Hyatt awards, bookable up to 13 months ahead.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": "2026-06-30",
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "H5",
+        "H6"
+      ]
+    }
+  ],
+  "certificates": [],
+  "thresholds": [
+    {
+      "id": "10k-elite-nights",
+      "spend": 10000,
+      "period": "calendar_year",
+      "unlocks": "5 elite nights for every $10,000 of eligible net purchases.",
+      "sources": [
+        "HB1",
+        "HB2",
+        "HB3"
+      ]
+    },
+    {
+      "id": "50k-redemption-rebate",
+      "spend": 50000,
+      "period": "calendar_year",
+      "unlocks": "Award redemption rebate for the rest of that calendar year.",
+      "sources": [
+        "HB1",
+        "HB2",
+        "HB3"
+      ]
+    }
+  ],
+  "disagreements": [],
+  "upcoming_changes": [],
+  "sources": {
+    "HB1": {
+      "title": "World of Hyatt Business Credit Card product and terms",
+      "url": "https://creditcards.chase.com/business-credit-cards/world-of-hyatt/hyatt-business-card",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "HB2": {
+      "title": "World of Hyatt Business Credit Card review",
+      "url": "https://www.nerdwallet.com/business/credit-cards/reviews/world-hyatt-business",
+      "publisher": "NerdWallet",
+      "kind": "review",
+      "published": "2026-10-13",
+      "checked_on": "2026-11-02"
+    },
+    "HB3": {
+      "title": "World of Hyatt Business Credit Card review",
+      "url": "https://upgradedpoints.com/credit-cards/reviews/world-of-hyatt-business-card/",
+      "publisher": "Upgraded Points",
+      "kind": "review",
+      "published": "2026-10-13",
+      "checked_on": "2026-11-02"
+    },
+    "HB4": {
+      "title": "World of Hyatt Business Credit Card launch coverage",
+      "url": "https://travelingformiles.com/hyatt-launches-the-world-of-hyatt-business-credit-card/",
+      "publisher": "Traveling for Miles",
+      "kind": "review",
+      "published": "2021-10-06",
+      "checked_on": "2026-11-02"
+    },
+    "H5": {
+      "title": "World of Hyatt program terms",
+      "url": "https://www.hyatt.com/help/terms/world-of-hyatt?cat_id=90000789&content_id=90005278",
+      "publisher": "World of Hyatt",
+      "kind": "program",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "H6": {
+      "title": "World of Hyatt early award night access",
+      "url": "https://onemileatatime.com/news/world-of-hyatt-early-award-night-access/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  }
+}

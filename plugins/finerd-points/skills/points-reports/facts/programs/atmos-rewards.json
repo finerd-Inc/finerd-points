@@ -1,0 +1,10 @@
+{
+  "schema": "finerd-points/program@1",
+  "id": "atmos-rewards",
+  "name": "Atmos Rewards",
+  "unit": "points",
+  "kind": "airline",
+  "expiry": null,
+  "checked_on": "2026-11-02",
+  "sources": {}
+}

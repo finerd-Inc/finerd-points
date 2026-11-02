@@ -1,0 +1,180 @@
+{
+ "format": "finerd-points-ledger",
+ "schema_version": 1,
+ "ledger_id": "led-2133765b1779",
+ "version": 3,
+ "created_at": "2026-11-02T11:17:14Z",
+ "updated_at": "2026-11-02T11:17:15Z",
+ "_meta": {
+  "writer": null,
+  "setup": {
+   "storage": "file",
+   "location": "demo.ledger.json",
+   "calendar_id": null,
+   "finance_app": null,
+   "timezone": "America/New_York",
+   "household_mode": "single",
+   "report_currency": "USD",
+   "first_run_notice_shown": false
+  },
+  "settings": {
+   "foregone_cashback_rate": 0.02,
+   "foregone_cashback_exclusions": [],
+   "calendar_min_value": 25,
+   "reminder_days_before": 3,
+   "stale_after_days": 30
+  },
+  "redactions": []
+ },
+ "people": [
+  {
+   "id": "me",
+   "name": "Alex",
+   "role": "owner",
+   "consent": {
+    "given": true,
+    "on": "2026-11-02",
+    "by": "self"
+   }
+  }
+ ],
+ "cards": [
+  {
+   "id": "gold",
+   "person": "me",
+   "nickname": "Gold",
+   "catalog_ref": "amex-gold",
+   "anniversary": "03-13",
+   "finance_link": {
+    "app": "CSV",
+    "account_id": "Gold"
+   },
+   "added_at": "2026-11-02T11:17:15Z"
+  },
+  {
+   "id": "bgold",
+   "person": "me",
+   "nickname": "Business Gold",
+   "catalog_ref": "amex-business-gold",
+   "finance_link": {
+    "app": "CSV",
+    "account_id": "Business Gold"
+   },
+   "added_at": "2026-11-02T11:17:15Z"
+  }
+ ],
+ "accounts": [
+  {
+   "id": "hyatt",
+   "person": "me",
+   "program": "world-of-hyatt",
+   "nickname": "World of Hyatt",
+   "unit": "points",
+   "added_at": "2026-11-02T11:17:15Z"
+  }
+ ],
+ "observations": [
+  {
+   "subject": "account:hyatt",
+   "field": "balance",
+   "value": 48200,
+   "source": {
+    "kind": "person"
+   },
+   "as_of": "2026-10-30",
+   "confidence": "confirmed",
+   "unit": "points",
+   "id": "obs-c162477b",
+   "observed_at": "2026-11-02T11:17:15Z"
+  },
+  {
+   "subject": "account:hyatt",
+   "field": "expires_on",
+   "value": "2026-12-15",
+   "source": {
+    "kind": "email",
+    "name": "World of Hyatt statement"
+   },
+   "as_of": "2026-10-30",
+   "confidence": "confirmed",
+   "id": "obs-38a6b9e1",
+   "observed_at": "2026-11-02T11:17:15Z"
+  }
+ ],
+ "corrections": [],
+ "redemptions": [
+  {
+   "id": "r1",
+   "person": "me",
+   "program": "world-of-hyatt",
+   "booked_on": "2025-05-10",
+   "points": 25000,
+   "fees": 0,
+   "fallback": 420,
+   "normalized": 610,
+   "status": "booked",
+   "description": "Two nights, city hotel",
+   "added_at": "2026-11-02T11:17:15Z"
+  },
+  {
+   "id": "r2",
+   "person": "me",
+   "program": "atmos-rewards",
+   "booked_on": "2025-09-02",
+   "points": 70000,
+   "fees": 45,
+   "fallback": 900,
+   "normalized": 2400,
+   "status": "booked",
+   "description": "One-way business for two",
+   "purchased_points_cost": 600,
+   "added_at": "2026-11-02T11:17:15Z"
+  },
+  {
+   "id": "r3",
+   "person": "me",
+   "program": "world-of-hyatt",
+   "booked_on": "2025-11-20",
+   "points": 12000,
+   "fees": 0,
+   "fallback": 180,
+   "normalized": 250,
+   "status": "cancelled",
+   "description": "Cancelled, points returned",
+   "added_at": "2026-11-02T11:17:15Z"
+  }
+ ],
+ "costs": [
+  {
+   "id": "buy1",
+   "date": "2025-08-30",
+   "kind": "points_purchase",
+   "amount": 600,
+   "currency": "USD",
+   "description": "Bought 20,000 miles",
+   "added_at": "2026-11-02T11:17:15Z"
+  },
+  {
+   "id": "fee1",
+   "date": "2025-03-13",
+   "kind": "annual_fee",
+   "amount": 325,
+   "currency": "USD",
+   "card": "gold",
+   "added_at": "2026-11-02T11:17:15Z"
+  },
+  {
+   "id": "tool1",
+   "date": "2025-01-15",
+   "kind": "tool",
+   "amount": 100,
+   "currency": "USD",
+   "description": "Award search subscription",
+   "added_at": "2026-11-02T11:17:15Z"
+  }
+ ],
+ "certificates": [],
+ "signup_offers": [],
+ "calendar_events": [],
+ "oplog": []
+}

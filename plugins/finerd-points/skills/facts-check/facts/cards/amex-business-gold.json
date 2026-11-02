@@ -1,0 +1,295 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "amex-business-gold",
+  "name": "American Express Business Gold Card",
+  "issuer": "American Express",
+  "country": "US",
+  "segment": "business",
+  "currency": "USD",
+  "rewards_program": "amex-membership-rewards",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 375,
+      "effective_from": "2024-02-01",
+      "effective_to": null,
+      "note": "New accounts and applicable renewals from 2024-02-01; the preceding benefit refresh began 2023-10-03.",
+      "sources": [
+        "BG1",
+        "BG4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "flexible-business-credit",
+      "name": "Flexible Business credit",
+      "kind": "statement_credit",
+      "amount": 20,
+      "period": "month",
+      "annual_max": 240,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "One $20 monthly allowance shared across U.S. Grubhub, office-supply stores and qualifying small-parcel shipping bought directly at UPS.com.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "GRUBHUB",
+          "UPS"
+        ],
+        "posting_lag_days": 56
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "UPS.com replaced FedEx on 2026-10-01; older reviews still list FedEx. The UPS Store and other excluded UPS services are not the same as direct UPS.com parcel shipping.",
+      "sources": [
+        "BG1",
+        "BG2",
+        "BG6"
+      ]
+    },
+    {
+      "id": "chatgpt-business",
+      "name": "ChatGPT Business credit",
+      "kind": "statement_credit",
+      "amount": 300,
+      "period": "calendar_year",
+      "annual_max": 300,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible U.S. ChatGPT Business subscription purchases; the subscription renews automatically.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "CHATGPT"
+        ],
+        "verified": true
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Amex documented this benefit on 2026-06-05; its first effective date was not found. Older annual-credit totals of $395 leave it out. Description verified on a real statement credit (2026-09-09).",
+      "sources": [
+        "BG1",
+        "BG3",
+        "BG7"
+      ]
+    },
+    {
+      "id": "squarespace",
+      "name": "Squarespace credit",
+      "kind": "statement_credit",
+      "amount": 150,
+      "period": "calendar_year",
+      "annual_max": 150,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible U.S. purchases made directly with Squarespace.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "SQUARESPACE"
+        ],
+        "verified": true
+      },
+      "shared_group": null,
+      "effective_from": "2025-10-23",
+      "effective_to": null,
+      "note": "Started 2025-10-23 (Doctor of Credit, The Points Guy and AwardWallet agree; the 2026-08-21 date in earlier research was an article update). Purchases directly with Squarespace (squarespace.com, acuityscheduling.com). Description verified on a real statement credit (2026-07-21).",
+      "sources": [
+        "AW1",
+        "BG1",
+        "BG3",
+        "BG5",
+        "DOC1",
+        "TPG1"
+      ]
+    },
+    {
+      "id": "walmart-plus",
+      "name": "Walmart+ credit",
+      "kind": "statement_credit",
+      "amount": 12.95,
+      "period": "month",
+      "annual_max": 155.4,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Join Walmart+ and pay the membership with the card; a separate Amex activation was not found.",
+      "qualifying": "One monthly Walmart+ membership charge; annual plans and Plus Ups are excluded.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "WALMART"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The allowance is $12.95 a month plus applicable tax, or $155.40 a year before tax; the '$155 Walmart+ credit' wording in Amex marketing is a rounded figure.",
+      "sources": [
+        "BG1",
+        "BG2"
+      ]
+    },
+    {
+      "id": "hotel-collection",
+      "name": "The Hotel Collection property credit",
+      "kind": "folio_credit",
+      "amount": 100,
+      "period": "per_stay",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Book through Amex Travel; minimum two consecutive nights.",
+      "qualifying": "Property-designated incidentals at participating hotels; room benefits depend on availability.",
+      "evidence": "folio",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "BG1",
+        "BG3"
+      ]
+    },
+    {
+      "id": "venue-concessions",
+      "name": "Amex Venue Collection concessions",
+      "kind": "percentage_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": 250,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll one eligible Amex card per Card Member.",
+      "qualifying": "10% back on food and drink at participating stadium and arena concessions; tickets, parking and merchandise excluded.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "VENUE",
+          "CONCESSION",
+          "CONCESSIONS"
+        ]
+      },
+      "shared_group": "amex-venue-concessions",
+      "effective_from": null,
+      "effective_to": "2026-12-31",
+      "note": "One allowance per Card Member across all enrolled Amex cards.",
+      "sources": [
+        "AC"
+      ]
+    }
+  ],
+  "certificates": [],
+  "thresholds": [
+    {
+      "id": "4x-top-categories-cap",
+      "spend": 150000,
+      "period": "calendar_year",
+      "unlocks": "4x in the two highest-spend eligible categories each billing cycle, up to this combined amount, then 1x.",
+      "sources": [
+        "BG1",
+        "BG2",
+        "BG3"
+      ]
+    }
+  ],
+  "disagreements": [],
+  "upcoming_changes": [],
+  "sources": {
+    "AC": {
+      "title": "Amex Venue Collection concessions offer terms",
+      "url": "https://www.americanexpress.com/en-us/benefits/membership/experiences/venues/concessions-enrollment/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2026-06-05",
+      "checked_on": "2026-11-02"
+    },
+    "BG1": {
+      "title": "Business Gold Card product and benefit terms",
+      "url": "https://www.americanexpress.com/us/credit-cards/business/business-credit-cards/american-express-business-gold-card-amex/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BG2": {
+      "title": "Business Gold Card review",
+      "url": "https://thepointsguy.com/credit-cards/reviews/amex-business-gold-card-review/",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": "2026-04-21",
+      "checked_on": "2026-11-02"
+    },
+    "BG3": {
+      "title": "Business Gold Card review",
+      "url": "https://onemileatatime.com/reviews/credit-cards/american-express/amex-business-gold-card/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-09-19",
+      "checked_on": "2026-11-02"
+    },
+    "BG4": {
+      "title": "Amex introduces the refreshed U.S. Business Gold Card",
+      "url": "https://s24.q4cdn.com/622300748/files/doc_news/American-Express-Introduces-Refreshed-U.S.-Business-Gold-Card-With-Enhanced-Benefits-and-Rewards-Built-for-Business-2023.pdf",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2023-10-03",
+      "checked_on": "2026-11-02"
+    },
+    "BG5": {
+      "title": "Business Gold adds a $150 Squarespace credit",
+      "url": "https://www.doctorofcredit.com/american-express-business-gold-card-adds-new-150-squarespace-credit/",
+      "publisher": "Doctor of Credit",
+      "kind": "review",
+      "published": "2026-08-21",
+      "checked_on": "2026-11-02"
+    },
+    "BG6": {
+      "title": "Business Gold adds UPS to the flexible credit",
+      "url": "https://upgradedpoints.com/news/amex-business-gold-adds-ups-flex-credit/",
+      "publisher": "Upgraded Points",
+      "kind": "review",
+      "published": "2026-10-01",
+      "checked_on": "2026-11-02"
+    },
+    "BG7": {
+      "title": "ChatGPT Business benefit for Business Platinum and Business Gold",
+      "url": "https://www.americanexpress.com/en-us/business/trends-and-insights/articles/how-to-get-more-done-with-chatgpt-business-a-new-benefit-for-american-express-business-platinum-card-and-business-gold-card-members/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2026-06-05",
+      "checked_on": "2026-11-02"
+    },
+    "DOC1": {
+      "title": "American Express Business Gold Card adds new $150 Squarespace credit",
+      "url": "https://www.doctorofcredit.com/american-express-business-gold-card-adds-new-150-squarespace-credit/",
+      "publisher": "Doctor of Credit",
+      "kind": "review",
+      "published": "2025-10-23",
+      "checked_on": "2026-11-02"
+    },
+    "TPG1": {
+      "title": "Amex Business Gold Squarespace credit",
+      "url": "https://thepointsguy.com/credit-cards/amex-business-gold-squarespace-credit/",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "AW1": {
+      "title": "Squarespace credit",
+      "url": "https://awardwallet.com/credit-cards/amex-membership-rewards/squarespace-credit/",
+      "publisher": "AwardWallet",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  }
+}

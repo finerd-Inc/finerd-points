@@ -1,0 +1,377 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "amex-hilton-aspire",
+  "name": "Hilton Honors American Express Aspire Card",
+  "issuer": "American Express",
+  "country": "US",
+  "segment": "personal",
+  "currency": "USD",
+  "rewards_program": "hilton-honors",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 550,
+      "effective_from": "2023-10-19",
+      "effective_to": null,
+      "note": "Increase for new accounts from 2023-10-19 and for existing-account renewals from 2024-02-01.",
+      "sources": [
+        "AS1",
+        "AS4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "hilton-resort-credit",
+      "name": "Hilton resort credit",
+      "kind": "statement_credit",
+      "amount": 200,
+      "period": "half_year",
+      "annual_max": 400,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "No separate activation.",
+      "qualifying": "Eligible direct charges at participating Hilton resorts, including qualifying room and incidental charges; advance-purchase and nonrefundable rates do not qualify.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "HILTON"
+        ],
+        "posting_lag_days": 84
+      },
+      "shared_group": null,
+      "effective_from": "2024-01-01",
+      "effective_to": null,
+      "note": "The $400 semiannual structure began 2024-01-01. Older lists show a $250 resort credit per cardmember year.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3",
+        "AS4"
+      ]
+    },
+    {
+      "id": "flight-credit",
+      "name": "Flight credit",
+      "kind": "statement_credit",
+      "amount": 50,
+      "period": "quarter",
+      "annual_max": 200,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "No airline selection or enrollment.",
+      "qualifying": "Eligible flight purchases made directly with airlines or through Amex Travel.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AIRLINE",
+          "AIRLINES",
+          "AMEX TRAVEL"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Older lists show a $250 airline incidental credit. Reports that airfare taxes, seat fees or other airline charges sometimes trigger the credit are transaction observations, not a guarantee.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3"
+      ]
+    },
+    {
+      "id": "clear-plus",
+      "name": "CLEAR+ credit",
+      "kind": "statement_credit",
+      "amount": 219,
+      "period": "calendar_year",
+      "annual_max": 219,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Join CLEAR+ and charge the membership to the card.",
+      "qualifying": "Eligible CLEAR+ membership.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "CLEAR"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Raised to $219 on 2026-07-01; older $189, $199 and $209 figures are superseded.",
+      "sources": [
+        "AS1",
+        "AS6"
+      ]
+    },
+    {
+      "id": "waldorf-conrad-property-credit",
+      "name": "Waldorf Astoria / Conrad property credit",
+      "kind": "folio_credit",
+      "amount": 100,
+      "period": "per_stay",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Book the qualifying Aspire benefit rate through the designated channel; minimum 2 nights.",
+      "qualifying": "Eligible on-property incidentals; the room rate is excluded.",
+      "evidence": "folio",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Up to $100 per qualifying stay; no annual limit is published.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3"
+      ]
+    },
+    {
+      "id": "hilton-diamond-status",
+      "name": "Hilton Diamond status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Link a Hilton account.",
+      "qualifying": "Hilton benefits including eligible upgrades, lounge access, brand-dependent breakfast or food and drink, and bonus points.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Held while the eligible account stays open. A further Aspire spend threshold to reach Diamond Reserve was not found.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3"
+      ]
+    },
+    {
+      "id": "fifth-award-night-free",
+      "name": "Fifth award night free",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs a Hilton elite account.",
+      "qualifying": "Qualifying all-points stays; the fifth night is free on an eligible standard-room points redemption.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "AS2",
+        "AS3"
+      ]
+    },
+    {
+      "id": "national-executive-status",
+      "name": "National Executive status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enrollment required.",
+      "qualifying": "Eligible National rentals.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Held while the card is eligible.",
+      "sources": [
+        "AS1",
+        "AS2"
+      ]
+    },
+    {
+      "id": "global-dining-access",
+      "name": "Global Dining Access / ticket access",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Link or use the eligible card as required.",
+      "qualifying": "Participating Resy reservations and Amex ticket programs.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Access benefit; a fixed amount was not found.",
+      "sources": [
+        "AS1"
+      ]
+    },
+    {
+      "id": "venue-concessions",
+      "name": "Amex Venue Collection concessions",
+      "kind": "percentage_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": 250,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll one eligible Amex card per Card Member.",
+      "qualifying": "10% back on food and drink at participating stadium and arena concessions; tickets, parking and merchandise excluded.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "VENUE",
+          "CONCESSION",
+          "CONCESSIONS"
+        ]
+      },
+      "shared_group": "amex-venue-concessions",
+      "effective_from": null,
+      "effective_to": "2026-12-31",
+      "note": "One allowance per Card Member across all enrolled Amex cards.",
+      "sources": [
+        "AC"
+      ]
+    }
+  ],
+  "certificates": [
+    {
+      "id": "annual-free-night",
+      "name": "Annual free night reward",
+      "trigger": "card_anniversary",
+      "spend_threshold": null,
+      "value_cap": "One night in a standard room with reward availability; no fixed points-price cap; excluded properties and room types apply.",
+      "valid_months": 12,
+      "note": "Issued in the first year and at each renewal. Usable any night of the week; standard-room taxes and applicable resort fees are included; nontransferable; the stay must be completed within validity.",
+      "sources": [
+        "AS1",
+        "AS5"
+      ]
+    },
+    {
+      "id": "spend-free-night-30k",
+      "name": "Spending free night reward",
+      "trigger": "spend_threshold",
+      "spend_threshold": 30000,
+      "value_cap": "One night in a standard room with reward availability; no fixed points-price cap; excluded properties and room types apply.",
+      "valid_months": 12,
+      "note": "Earned at $30,000 of eligible net purchases in a calendar year; thresholds reset January 1. Same use rules as the annual free night.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3",
+        "AS5"
+      ]
+    },
+    {
+      "id": "spend-free-night-60k",
+      "name": "Second spending free night reward",
+      "trigger": "spend_threshold",
+      "spend_threshold": 60000,
+      "value_cap": "One night in a standard room with reward availability; no fixed points-price cap; excluded properties and room types apply.",
+      "valid_months": 12,
+      "note": "Earned at $60,000 of eligible net purchases in a calendar year (total, not additional); thresholds reset January 1. Same use rules as the annual free night.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3",
+        "AS5"
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "id": "30k-free-night",
+      "spend": 30000,
+      "period": "calendar_year",
+      "unlocks": "First additional free night reward.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3"
+      ]
+    },
+    {
+      "id": "60k-free-night",
+      "spend": 60000,
+      "period": "calendar_year",
+      "unlocks": "Another free night reward at $60,000 total spend.",
+      "sources": [
+        "AS1",
+        "AS2",
+        "AS3"
+      ]
+    }
+  ],
+  "disagreements": [],
+  "upcoming_changes": [],
+  "sources": {
+    "AC": {
+      "title": "Amex Venue Collection concessions offer terms",
+      "url": "https://www.americanexpress.com/en-us/benefits/membership/experiences/venues/concessions-enrollment/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2026-06-05",
+      "checked_on": "2026-11-02"
+    },
+    "AS1": {
+      "title": "Hilton Honors Aspire Card benefits",
+      "url": "https://www.americanexpress.com/us/credit-cards/card/hilton-honors-aspire/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "AS2": {
+      "title": "Hilton Aspire Card review",
+      "url": "https://onemileatatime.com/reviews/credit-cards/american-express/hilton-aspire-card/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-09-21",
+      "checked_on": "2026-11-02"
+    },
+    "AS3": {
+      "title": "Hilton Aspire Card review",
+      "url": "https://thepointsguy.com/credit-cards/reviews/hilton-amex-aspire-review/",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "AS4": {
+      "title": "Hilton and American Express upgrade the Surpass and Aspire cards",
+      "url": "https://stories.hilton.com/releases/hilton-and-american-express-upgrade-hilton-honors-surpass-aspire-cards",
+      "publisher": "Hilton",
+      "kind": "program",
+      "published": "2023-10-19",
+      "checked_on": "2026-11-02"
+    },
+    "AS5": {
+      "title": "Hilton Honors free night reward terms",
+      "url": "https://www.hilton.com/en/hilton-honors/free-night-reward-terms/",
+      "publisher": "Hilton",
+      "kind": "program",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "AS6": {
+      "title": "CLEAR membership price increase",
+      "url": "https://onemileatatime.com/news/clear-membership-price-increase/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-07-01",
+      "checked_on": "2026-11-02"
+    }
+  }
+}

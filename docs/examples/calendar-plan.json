@@ -1,0 +1,62 @@
+[
+ {
+  "op": "external",
+  "target": "calendar",
+  "action": "create",
+  "app": "calendar",
+  "subject": "credits:2026-11-30",
+  "match_key": "create:credits:2026-11-30:2026-11-30",
+  "summary": "Event «Card credits ending (4)» on 2026-11-30, private, no guests, reminder 3 days before — Dining credit (Gold), Dunkin' credit (Gold), Flexible Business credit (Business Gold), Uber Cash (Gold)",
+  "payload": {
+   "calendar_id": "primary",
+   "title": "Card credits ending (4)",
+   "date": "2026-11-30",
+   "all_day": true,
+   "reminder_minutes": 4320,
+   "visibility": "private",
+   "attendees": [],
+   "description": "Created by finerd points at your request.\n- Dining credit (Gold): 10.00 left (not used yet)\n- Dunkin' credit (Gold): 7.00 left (not used yet)\n- Flexible Business credit (Business Gold): 20.00 left (not used yet)\n- Uber Cash (Gold): 10.00 left (ask)",
+   "done": false
+  }
+ },
+ {
+  "op": "external",
+  "target": "calendar",
+  "action": "create",
+  "app": "calendar",
+  "subject": "credits:2026-12-31",
+  "match_key": "create:credits:2026-12-31:2026-12-31",
+  "summary": "Event «Card credits ending (2)» on 2026-12-31, private, no guests, reminder 3 days before — ChatGPT Business credit (Business Gold), Resy credit (Gold)",
+  "payload": {
+   "calendar_id": "primary",
+   "title": "Card credits ending (2)",
+   "date": "2026-12-31",
+   "all_day": true,
+   "reminder_minutes": 4320,
+   "visibility": "private",
+   "attendees": [],
+   "description": "Created by finerd points at your request.\n- ChatGPT Business credit (Business Gold): 300.00 left (not used yet)\n- Resy credit (Gold): 50.00 left (not used yet)",
+   "done": false
+  }
+ },
+ {
+  "op": "external",
+  "target": "calendar",
+  "action": "create",
+  "app": "calendar",
+  "subject": "account:hyatt",
+  "match_key": "create:account:hyatt:2026-12-15",
+  "summary": "Event «World of Hyatt points expire» on 2026-12-15, private, no guests, reminder 3 days before",
+  "payload": {
+   "calendar_id": "primary",
+   "title": "World of Hyatt points expire",
+   "date": "2026-12-15",
+   "all_day": true,
+   "reminder_minutes": 4320,
+   "visibility": "private",
+   "attendees": [],
+   "description": "Created by finerd points at your request. Details are in your ledger.",
+   "done": false
+  }
+ }
+]

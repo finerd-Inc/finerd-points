@@ -1,0 +1,219 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "test-card-b",
+  "name": "Synthetic Test Card B",
+  "issuer": "Example Bank",
+  "country": "US",
+  "segment": "business",
+  "currency": "USD",
+  "rewards_program": null,
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 500,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "lodging",
+      "name": "Lodging credit",
+      "kind": "statement_credit",
+      "amount": 300,
+      "period": "half_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": null,
+      "qualifying": "Synthetic.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AIRBNB LODGING",
+          "LODGING"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ]
+    },
+    {
+      "id": "experiences",
+      "name": "Experiences credit",
+      "kind": "statement_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": null,
+      "qualifying": "Synthetic.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AIRBNB"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ]
+    },
+    {
+      "id": "venue",
+      "name": "Venue concessions",
+      "kind": "percentage_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": null,
+      "qualifying": "Synthetic.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "VENUE"
+        ]
+      },
+      "shared_group": "g1",
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ]
+    },
+    {
+      "id": "entry",
+      "name": "Global Entry credit",
+      "kind": "statement_credit",
+      "amount": 120,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": null,
+      "qualifying": "Synthetic.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "GLOBAL ENTRY"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dell-small",
+      "name": "Dell credit",
+      "kind": "statement_credit",
+      "amount": 150,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": null,
+      "qualifying": "Synthetic.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "DELL"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ]
+    },
+    {
+      "id": "dell",
+      "name": "Dell spend credit",
+      "kind": "statement_credit",
+      "amount": 1000,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": null,
+      "qualifying": "Synthetic.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "DELL"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ],
+      "requires": {
+        "kind": "spend_threshold",
+        "note": "$5,000 of Dell purchases"
+      }
+    },
+    {
+      "id": "hotel",
+      "name": "Anniversary hotel credit",
+      "kind": "statement_credit",
+      "amount": 100,
+      "period": "card_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": null,
+      "qualifying": "Synthetic.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "HOTEL CREDIT"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "E1"
+      ]
+    }
+  ],
+  "certificates": [],
+  "thresholds": [],
+  "disagreements": [],
+  "upcoming_changes": [],
+  "sources": {
+    "E1": {
+      "title": "Synthetic terms",
+      "url": "https://example.com/terms",
+      "publisher": "Example Bank",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+finerd points
+Copyright (c) 2026 finerd. Released under the MIT License (see LICENSE).
+
+Third-party material
+- No third-party code is bundled. The scripts use only the Python standard library.
+- The facts catalog summarizes card and program terms in our own words and links each source
+  (issuers, programs and independent reviews). No third-party text, logos or licensed API data
+  are included. Card, bank, airline, hotel and program names are trademarks of their owners and
+  are used only to identify them; finerd points is not affiliated with or endorsed by them, or by
+  Anthropic or OpenAI.
+- The report page uses finerd's own design system (finerd style guide, finerd-web).
+- Ledger importers read the person's own copy of community spreadsheets (for example the
+  r/churning «Churning Tracker»); no template content is copied into this repository.

@@ -1,0 +1,495 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "chase-ihg-premier",
+  "name": "IHG One Rewards Premier Credit Card",
+  "issuer": "Chase",
+  "country": "US",
+  "segment": "personal",
+  "currency": "USD",
+  "rewards_program": "ihg-one-rewards",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 150,
+      "effective_from": "2026-10-01",
+      "effective_to": null,
+      "note": "New applications from 2026-10-01; existing accounts move to $150 at their applicable 2027 renewal.",
+      "sources": [
+        "I1",
+        "I4",
+        "I5"
+      ]
+    },
+    {
+      "amount": 99,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Existing accounts keep $99 until their applicable 2027 renewal; the date differs by account, so no end date is set.",
+      "sources": [
+        "I4",
+        "I5"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "airline-credit",
+      "name": "Airline credit",
+      "kind": "statement_credit",
+      "amount": 100,
+      "period": "calendar_year",
+      "annual_max": 100,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "One airline-ticket purchase of $250 or more made directly with an airline; $250 of cumulative airline transactions does not count.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AIRLINE",
+          "AIRLINES"
+        ],
+        "posting_lag_days": 28
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2027-12-31",
+      "note": "Offered through 2027-12-31. Typically posts in about 3 business days; allow up to 4 weeks.",
+      "sources": [
+        "I1",
+        "I2",
+        "I3"
+      ]
+    },
+    {
+      "id": "ihg-food-beverage-voucher",
+      "name": "IHG food-and-beverage voucher",
+      "kind": "wallet_credit",
+      "amount": 25,
+      "period": "quarter",
+      "annual_max": 100,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Delivered automatically to the IHG account; redeem before checkout.",
+      "qualifying": "Eligible food, drink and gratuities charged to the room at participating properties.",
+      "evidence": "wallet",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Expires at quarter-end and the unused remainder is forfeited. Shows in the IHG wallet and on the hotel folio, not as a card statement credit.",
+      "sources": [
+        "I1",
+        "I2",
+        "I4"
+      ]
+    },
+    {
+      "id": "united-travelbank",
+      "name": "United TravelBank",
+      "kind": "wallet_credit",
+      "amount": 25,
+      "period": "half_year",
+      "annual_max": 50,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "One-time IHG and United registration.",
+      "qualifying": "Eligible United purchases made using TravelBank.",
+      "evidence": "wallet",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Deposits around January 5 and July 5. The first-half deposit expires July 15; the second-half deposit expires January 15 of the following year.",
+      "sources": [
+        "I1",
+        "I2",
+        "I3"
+      ]
+    },
+    {
+      "id": "global-entry-tsa-nexus",
+      "name": "Global Entry / TSA PreCheck / NEXUS credit",
+      "kind": "statement_credit",
+      "amount": 120,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "No separate activation.",
+      "qualifying": "Eligible application fee charged to the card.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "GLOBAL ENTRY",
+          "TSA",
+          "NEXUS"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Up to $120, available once every 4 years. Allow 1-2 billing cycles for the credit.",
+      "sources": [
+        "I1",
+        "I2"
+      ]
+    },
+    {
+      "id": "instacart-plus",
+      "name": "Instacart+ membership",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate and link an eligible card by 2027-12-31.",
+      "qualifying": "Eligible Instacart membership.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "3 complimentary months, then a paid renewal.",
+      "sources": [
+        "I1"
+      ]
+    },
+    {
+      "id": "instacart-credit",
+      "name": "Instacart credit",
+      "kind": "other",
+      "amount": 10,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an active eligible Instacart+ membership.",
+      "qualifying": "Eligible nonrestaurant orders with at least $10 from a single retailer; fees and taxes are excluded.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2027-12-31",
+      "note": "Calendar month, no rollover, through 2027-12-31. Applied as an Instacart credit or checkout reduction.",
+      "sources": [
+        "I1"
+      ]
+    },
+    {
+      "id": "dashpass",
+      "name": "DoorDash DashPass",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate by 2027-12-31.",
+      "qualifying": "Eligible DoorDash and Caviar orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "12 complimentary months from activation.",
+      "sources": [
+        "I1"
+      ]
+    },
+    {
+      "id": "doordash-discount-monthly",
+      "name": "DoorDash nonrestaurant discount (monthly)",
+      "kind": "other",
+      "amount": 10,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an active eligible DashPass; select the offer.",
+      "qualifying": "Eligible nonrestaurant orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": "2026-09-01",
+      "effective_to": null,
+      "note": "Applies to DashPass activations from 2026-09-01 through 2027-12-31. No rollover; applied at checkout.",
+      "sources": [
+        "I1"
+      ]
+    },
+    {
+      "id": "doordash-discount-quarterly",
+      "name": "DoorDash nonrestaurant discount (quarterly)",
+      "kind": "other",
+      "amount": 10,
+      "period": "quarter",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an active eligible DashPass; select the offer.",
+      "qualifying": "Eligible nonrestaurant orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": "2025-02-01",
+      "effective_to": null,
+      "note": "Applies to DashPass activations from 2025-02-01 through 2026-08-31. No rollover; applied at checkout.",
+      "sources": [
+        "I1"
+      ]
+    },
+    {
+      "id": "fourth-reward-night-free",
+      "name": "Fourth reward night free",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic with an eligible account.",
+      "qualifying": "Every fourth night of a consecutive points-only standard-room award stay of 4+ nights at the same property.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Shows as a reduced award price.",
+      "sources": [
+        "I1",
+        "I2",
+        "I3"
+      ]
+    },
+    {
+      "id": "purchased-points-discount",
+      "name": "Purchased-points discount",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Use the qualifying card or offer flow.",
+      "qualifying": "Eligible direct IHG points purchases.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "30% discount on the purchase price.",
+      "sources": [
+        "I1",
+        "I3"
+      ]
+    },
+    {
+      "id": "gold-elite-status",
+      "name": "Gold Elite status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Link an IHG account.",
+      "qualifying": "IHG loyalty program.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Automatic status under the refreshed offer. Older servicing pages and existing accounts show automatic Platinum; existing accounts keep Platinum through 2027-12-31 (Frequent Miler).",
+      "sources": [
+        "I1",
+        "I2",
+        "I5"
+      ]
+    },
+    {
+      "id": "annual-qualifying-nights",
+      "name": "Annual qualifying nights",
+      "kind": "other",
+      "amount": null,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "15 qualifying nights credited to the IHG account on opening and each year.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The annual credit arrives by February 1.",
+      "sources": [
+        "I1",
+        "I4"
+      ]
+    },
+    {
+      "id": "spending-qualifying-nights",
+      "name": "Spending qualifying nights",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "2 qualifying nights per $5,000 of eligible net card purchases.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "No annual cap. How partial progress resets was not found.",
+      "sources": [
+        "I1",
+        "I3"
+      ]
+    }
+  ],
+  "certificates": [
+    {
+      "id": "anniversary-night",
+      "name": "Anniversary free night",
+      "trigger": "card_anniversary",
+      "spend_threshold": null,
+      "value_cap": "Up to 50,000 points, with extra points allowed as a top-up; eligible reward-night inventory.",
+      "valid_months": 12,
+      "note": "Refreshed offer; it must be booked and used within 12 months of issuance. Existing accounts keep a 40,000-point certificate for 2026 renewals and get the new annual-night benefit in 2027 (Frequent Miler).",
+      "sources": [
+        "I1",
+        "I2",
+        "I3",
+        "I5"
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "id": "5k-qualifying-nights",
+      "spend": 5000,
+      "period": "ongoing",
+      "unlocks": "2 qualifying nights for every $5,000 of eligible net purchases; no annual cap.",
+      "sources": [
+        "I1",
+        "I3"
+      ]
+    },
+    {
+      "id": "15k-platinum-package",
+      "spend": 15000,
+      "period": "calendar_year",
+      "unlocks": "Platinum Elite status, 5 additional qualifying nights and 15,000 points. Earned status lasts the rest of the qualifying year and the following calendar year.",
+      "sources": [
+        "I1",
+        "I2",
+        "I3"
+      ]
+    },
+    {
+      "id": "40k-diamond",
+      "spend": 40000,
+      "period": "calendar_year",
+      "unlocks": "Diamond Elite status, lasting the rest of the qualifying year and the following calendar year.",
+      "sources": [
+        "I1",
+        "I2",
+        "I3"
+      ]
+    }
+  ],
+  "disagreements": [
+    {
+      "topic": "Fee, anniversary certificate size and automatic status",
+      "values": [
+        {
+          "value": "$99 annual fee, a 40,000-point certificate and automatic Platinum (legacy Chase servicing page).",
+          "sources": [
+            "I6"
+          ]
+        },
+        {
+          "value": "$150 annual fee, a 50,000-point certificate and automatic Gold (current Chase application page).",
+          "sources": [
+            "I1"
+          ]
+        }
+      ]
+    }
+  ],
+  "upcoming_changes": [
+    {
+      "effective_from": null,
+      "summary": "Existing accounts: per Frequent Miler they keep the $99 fee and 40,000-point certificate for 2026 renewals, get the new annual-night benefit in 2027 and keep Platinum through 2027-12-31. Chase's announcement confirms a 2027 fee transition but leaves account-specific details to individual notices.",
+      "sources": [
+        "I4",
+        "I5"
+      ]
+    },
+    {
+      "effective_from": null,
+      "summary": "The old milestone ($20,000 spend for a $100 credit and 10,000 points) is not the refreshed milestone ($15,000 for Platinum, 5 nights and 15,000 points). How partially completed legacy 2026 spending is treated was not found.",
+      "sources": [
+        "I1",
+        "I5"
+      ]
+    }
+  ],
+  "sources": {
+    "I1": {
+      "title": "IHG One Rewards Premier current application and terms",
+      "url": "https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "I2": {
+      "title": "IHG One Rewards Premier card review",
+      "url": "https://thepointsguy.com/credit-cards/reviews/ihg-premier-credit-card-review/",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": "2026-10-05",
+      "checked_on": "2026-11-02"
+    },
+    "I3": {
+      "title": "IHG One Rewards Premier card review",
+      "url": "https://onemileatatime.com/reviews/credit-cards/chase/ihg-one-rewards-premier-card/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-10-04",
+      "checked_on": "2026-11-02"
+    },
+    "I4": {
+      "title": "Chase announcement on IHG Premier and Select card updates",
+      "url": "https://media.chase.com/news/ihg-premier-select-card-portfolio-updates",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": "2026-10-01",
+      "checked_on": "2026-11-02"
+    },
+    "I5": {
+      "title": "Existing IHG credit cards refreshed: the changes",
+      "url": "https://frequentmiler.com/all-the-existing-ihg-credit-cards-have-been-refreshed-here-are-the-changes/",
+      "publisher": "Frequent Miler",
+      "kind": "review",
+      "published": "2026-10-01",
+      "checked_on": "2026-11-02"
+    },
+    "I6": {
+      "title": "Chase servicing page for the IHG Premier card (legacy figures)",
+      "url": "https://www.chase.com/personal/credit-cards/ihg/premier",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  }
+}

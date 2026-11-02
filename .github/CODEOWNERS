@@ -1,0 +1,9 @@
+# Draft: the finerd team names the owners before the repository goes public.
+*                                         @finerd/maintainers
+/plugins/finerd-points/skills/**/SKILL.md @finerd/skill-owners
+/shared/references/                       @finerd/skill-owners
+/shared/references/connectors/            @finerd/write-rules-owners
+/shared/lib/fpledger.py                   @finerd/write-rules-owners
+/tools/                                   @finerd/release-owners
+/.github/                                 @finerd/release-owners
+/.claude-plugin/                          @finerd/release-owners

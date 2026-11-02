@@ -1,0 +1,10 @@
+{
+  "schema": "finerd-points/program@1",
+  "id": "ihg-one-rewards",
+  "name": "IHG One Rewards",
+  "unit": "points",
+  "kind": "hotel",
+  "expiry": null,
+  "checked_on": "2026-11-02",
+  "sources": {}
+}
