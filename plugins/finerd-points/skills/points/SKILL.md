@@ -50,9 +50,10 @@ Not in this version: status forecasts and «keep or cancel this card» — say s
 3. `ledger.py init --ledger <path> --name <first name> --timezone <tz> --currency <cur>
    --storage file|folder --session <id>`.
 4. Cards: ask which cards they hold. Match each to the catalog (`facts/cards/*.json`); a card not
-   in the catalog is still added (`catalog_ref` omitted) and its credits are not tracked. Ask for
-   the open date or the annual-fee month when a benefit resets on the card anniversary. Never ask
-   for card numbers; last four digits are optional.
+   in the catalog is still added (`catalog_ref` omitted) and its credits are not tracked. When a
+   benefit resets on the card anniversary, ask for the open date (`opened_on`) or the anniversary
+   day and month (`anniversary`, MM-DD); a month alone is not enough. Never ask for card numbers;
+   last four digits are optional.
 5. Programs: one `add_account` per loyalty program, with `finance_link` when the finance app has a
    points account for it, and today's balance as an observation with its source.
 6. Link each card to its finance-app account (`finance_link`: app, account_id, account_name) and set
