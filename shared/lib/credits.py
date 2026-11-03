@@ -27,6 +27,8 @@ EPS = 0.005
 VISIBLE = {"statement_credit"}
 MONEY_KINDS = {"statement_credit", "wallet_credit", "folio_credit", "percentage_credit", "membership_credit"}
 EVENT_PERIODS = {"one_time", "per_stay", "per_booking", "ongoing"}
+EVENT_LABELS = {"one_time": "one-time", "per_stay": "per stay", "per_booking": "per booking",
+                "ongoing": "ongoing"}
 REFUND_RE = re.compile(r"(?<![A-Z])(REFUND|REFUNDED|RETURN|RETURNED|CHARGEBACK)(?![A-Z])")
 KNOWN = lambda p: p["status"] not in ("unknown", "ask")  # noqa: E731
 
@@ -608,8 +610,10 @@ def to_markdown(res):
                 status += f"; opens only after {b['requires'].get('note')}"
             if b.get("counted_on_card"):
                 status += f"; shared allowance, counted on {b['counted_on_card']}"
-            period = "this year (not periodic)" if b.get("event_like") else p["key"]
-            out.append(f"| {b['name']} | {period} ({sym}{p['allowance']:,.0f}) | {used} | {left} | {p['end']} | {status} |")
+            # a per-stay or one-time credit has no period of its own, so no year-end deadline
+            period = EVENT_LABELS.get(b["period"], b["period"]) if b.get("event_like") else p["key"]
+            ends = "—" if b.get("event_like") else p["end"]
+            out.append(f"| {b['name']} | {period} ({sym}{p['allowance']:,.0f}) | {used} | {left} | {ends} | {status} |")
     notes = [(c["nickname"], b["name"], n) for c in res["cards"] for b in c["benefits"]
              for p in ([b["current"]] if b["current"] else b["periods"][-1:]) for n in p["notes"][:2]]
     if notes:

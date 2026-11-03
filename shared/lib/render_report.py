@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import balances as bal  # noqa: E402
+import credits as crd  # noqa: E402
 import fpledger as fl  # noqa: E402
 
 E = html.escape
@@ -181,9 +182,12 @@ def credits_section(cr):
                 extra += f" <span class='note'>opens only after {E(b['requires'].get('note') or '')}</span>"
             if p.get("notes"):
                 extra += "<br><span class='note'>" + E("; ".join(p["notes"][:3])) + "</span>"
-            rows.append(f"<tr><td>{E(b['name'])}</td><td class='d'>{E(p['key'])}</td><td class='r'>{money2(p['allowance'])}</td>"
+            # a per-stay or one-time credit has no period of its own, so no year-end deadline
+            period = crd.EVENT_LABELS.get(b["period"], b["period"]) if b.get("event_like") else p["key"]
+            ends = "—" if b.get("event_like") else p["end"]
+            rows.append(f"<tr><td>{E(b['name'])}</td><td class='d'>{E(period)}</td><td class='r'>{money2(p['allowance'])}</td>"
                         f"<td class='r'>{money2(p['used'])}</td><td class='r'>{money2(p['remaining'])}</td>"
-                        f"<td class='d'>{E(p['end'])}</td><td>{chip(status)}{extra}</td></tr>")
+                        f"<td class='d'>{E(ends)}</td><td>{chip(status)}{extra}</td></tr>")
         out.append("<div class='scroll'><table><thead><tr><th>Credit</th><th>Period</th><th class='r'>Amount</th>"
                    "<th class='r'>Used</th><th class='r'>Left</th><th>Ends</th><th>Status</th></tr></thead><tbody>"
                    + "".join(rows) + "</tbody></table></div>")

@@ -553,6 +553,16 @@ class Round4Codex(unittest.TestCase):
         res = credits.analyze(self.led, self.catalog, self.acc, [], TODAY, 2026, only_card="b")
         self.assertEqual(self.ben(res, "b", "venue")["year_to_date"]["used"], 250)
 
+    def test_per_stay_credit_has_no_year_end_deadline(self):
+        led = ledger_with([{"op": "add_card", "id": "g", "person": "me", "nickname": "Gold", "catalog_ref": "amex-gold"}])
+        res = credits.analyze(led, ff.load_catalog(), {}, [], TODAY, 2026)
+        row = next(r for r in credits.to_markdown(res).splitlines() if r.startswith("| The Hotel Collection"))
+        self.assertIn("| per stay ($100) |", row)
+        self.assertNotIn("2026-12-31", row)
+        html_rows = [r for r in render_report.credits_section(res).split("<tr>") if "The Hotel Collection" in r]
+        self.assertIn("per stay", html_rows[0])
+        self.assertNotIn("2026-12-31", html_rows[0])
+
     def test_credit_posted_after_new_year_counts_in_the_new_year(self):
         for desc, bid in (("AIRLINE FEE CREDIT", "airline-credit"), ("DINING CREDIT", "dining")):
             txns = [tx("x", "2025-12-31", 10, desc, acc="accA", posted_date="2026-01-02")]
