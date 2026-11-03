@@ -12,7 +12,12 @@ Install in Claude Code:
 /plugin install finerd-points@finerd
 ```
 
-Ask in plain words:
+Start with «Set up finerd points». You need no history and no account anywhere: name your cards
+and programs, or hand over a points spreadsheet you already keep, and the skill creates your
+ledger. In a chat it gives you the ledger file to download; attach it to your next conversation.
+In the Claude app, Cowork or Claude Code it can keep the file in a folder on your computer instead.
+
+Then ask in plain words:
 - «Which credits haven't I used this month?»
 - «What expires in the next 45 days? Put it in my calendar.»
 - «How many points do I have?»
