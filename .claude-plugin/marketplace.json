@@ -7,7 +7,7 @@
       "name": "finerd-points",
       "source": "./plugins/finerd-points",
       "description": "Card credits, points and miles balances, expiring benefits and a yearly points result, kept in a ledger you own.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "productivity",
       "homepage": "https://github.com/finerd-Inc/finerd-points"
     }
