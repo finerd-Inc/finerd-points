@@ -1,6 +1,7 @@
 # Security
 
-Report vulnerabilities privately to **security@finerd.ai** [to be confirmed by the finerd team],
+Report vulnerabilities privately through GitHub: the repository's **Security** tab →
+**Report a vulnerability** (https://github.com/finerd-Inc/finerd-points/security/advisories/new),
 not in public issues. We answer within five working days.
 
 ## What we treat as security issues

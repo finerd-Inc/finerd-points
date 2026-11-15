@@ -12,7 +12,7 @@ CSV, rule 3.F), ChatGPT gets the `chatgpt` build.
 - **Developer:** finerd
 - **Category:** Finance (Claude: productivity if Finance is not offered)
 - **Support:** github.com/finerd-Inc/finerd-points/issues · support address [finerd team to confirm]
-- **Security contact:** security@finerd.ai [finerd team to confirm]
+- **Security contact:** https://github.com/finerd-Inc/finerd-points/security/advisories/new (security@finerd.ai once the finerd team confirms it)
 - **Privacy policy URL:** https://github.com/finerd-Inc/finerd-points/blob/<release tag>/PRIVACY.md
 - **Terms URL:** https://github.com/finerd-Inc/finerd-points/blob/<release tag>/TERMS.md
 - **Icon:** plugins/finerd-points/assets/icon.png (1024 × 1024). The Claude portal keeps the icon
