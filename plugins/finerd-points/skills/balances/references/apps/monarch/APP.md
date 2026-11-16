@@ -4,7 +4,7 @@ name: Monarch
 maintainer: "@finerd-Inc/maintainers"
 status: active
 writes: false
-connector: "Monarch connector the person added to their AI app"
+connector: "Monarch's own MCP connector (https://api.monarch.com/mcp; read or read and write, chosen when connecting)"
 tools_read: [get_accounts, get_transactions]
 tool_names_verified: null
 directory: []
@@ -13,10 +13,10 @@ directory: []
 # Monarch (read only)
 
 Read-only in this version: finerd points does not write into Monarch until the finerd team reviews and
-releases a writing version. The tool names above are not yet verified against a live Monarch connector
-(several community connectors exist, with different tool sets); before using them, list the connected
-tools and use only the account and transaction listing tools that only read. If none fits, stop and say
-so. This limit is instruction-only; the person can also switch every other Monarch tool off in their AI
+releases a writing version; recommend connecting Monarch read-only. The tool names above are not yet
+verified against the live connector (community connectors with other tool sets also exist); before using
+them, list the connected tools and use only the account and transaction listing tools that only read. If
+none fits, stop and say so. This limit is instruction-only; the person can also switch every other Monarch tool off in their AI
 app's connector settings.
 
 - Read card transactions for the date window and keep only the contract fields (date, merchant or
