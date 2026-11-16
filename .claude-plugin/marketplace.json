@@ -1,13 +1,16 @@
 {
   "name": "finerd",
-  "owner": {"name": "finerd", "url": "https://github.com/finerd-Inc"},
+  "owner": {
+    "name": "finerd",
+    "url": "https://github.com/finerd-Inc"
+  },
   "description": "finerd's open-source skills for AI assistants.",
   "plugins": [
     {
       "name": "finerd-points",
       "source": "./plugins/finerd-points",
-      "description": "Card credits, points and miles balances, expiring benefits and a yearly points result, kept in a ledger you own.",
-      "version": "0.1.3",
+      "description": "Collects your points, miles and card credits from whatever you open into a ledger on your computer, and shows the report.",
+      "version": "0.2.0",
       "category": "productivity",
       "homepage": "https://github.com/finerd-Inc/finerd-points"
     }

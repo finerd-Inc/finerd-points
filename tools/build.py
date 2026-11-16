@@ -49,6 +49,7 @@ PLAN = {
 # publisher's own connector or one in Claude's directory, checked per app before each submission), never
 # short paths, and none of the text between github-build-only markers.
 TARGETS = {"github": None, "claude-directory": "claude", "chatgpt": "chatgpt"}
+LEGAL_TEXTS = {"TERMS.md", "PRIVACY.md"}
 GITHUB_ONLY = re.compile(r"\n?<!-- github-build-only:start -->.*?<!-- github-build-only:end -->\n?", re.S)
 SKIP = {"__pycache__", ".DS_Store"}
 
@@ -191,6 +192,8 @@ def package(target):
                 if "short-paths" in name:
                     bad.append(name)
                 elif name.endswith((".md", ".py", ".json", ".sh")):
+                    if name.rsplit("/", 1)[-1] in LEGAL_TEXTS:
+                        continue  # the terms disclose that short paths exist; they load nothing
                     m = rx.search(z.read(name).decode("utf-8", "ignore"))
                     if m:
                         bad.append(f"{name} ({m.group(0)})")
