@@ -624,10 +624,15 @@ def issuer_only_benefits(card, obs, today, year, report_cur):
         else:
             status = "not used yet" if current else ("no credit posted" if end else "unknown")
         remaining = None if (lag or allowance is None) else round(max(allowance - used, 0.0), 2)
-        p = {"key": key, "start": None, "end": end or "—", "current": current, "in_year": True, "prior": False,
+        # the period's own year: its end date, else a year at the start of its key, else the read date
+        pyear = end[:4] if end else (key[:4] if re.match(r"^\d{4}", key) else g["used_amount"]["as_of"][:4])
+        if int(pyear) > year:
+            continue
+        p = {"key": key, "start": None, "end": end or "—", "current": current, "in_year": pyear == str(year),
+             "prior": int(pyear) < year,
              "allowance": allowance or 0.0, "credited": 0.0, "pending": 0.0, "reversed": 0.0,
              "used": None if lag else used, "remaining": remaining,
-             "used_by_year": {} if lag else {str(year): used}, "contribs": [], "status": status,
+             "used_by_year": {} if lag else {pyear: used}, "contribs": [], "status": status,
              "confidence": "issuer-reported", "coverage": "issuer page", "transactions": [],
              "notes": [f"as the issuer's page showed on {g['used_amount']['as_of']}"] +
                       (["the allowance was not shown"] if allowance is None else []) +

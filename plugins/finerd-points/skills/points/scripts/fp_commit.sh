@@ -61,14 +61,23 @@ park() { # rename a lock directory into locks/ (never delete)
 }
 
 release() {
-    if [ "$OWN" = 1 ]; then OWN=0; park "$LOCK" released; fi
+    if [ "$OWN" = 1 ]; then
+        OWN=0
+        if [ "$(val "$LOCK/owner" pid 2>/dev/null)" = "$$" ]; then
+            park "$LOCK" released
+        else
+            say "NOTE=the folder lock no longer belongs to this commit; left as it is"
+        fi
+    fi
 }
 trap release 0
 trap 'exit 130' INT TERM HUP
 
 take_stale() { # 0 = a dead owner's lock was parked; the caller retries mkdir
     if [ -d "$GUARD" ] && older_than_2min "$GUARD"; then
-        park "$GUARD" guard-abandoned 2>/dev/null && say "NOTE=released a guard lock left by a crashed commit"
+        # never released automatically: two writers could each park the other's fresh guard
+        say "NOTE=a guard lock left by a crashed commit blocks lock recovery; after the person agrees, run: sh bin/commit release-guard"
+        return 1
     fi
     if [ ! -f "$LOCK/owner" ]; then
         # a commit that crashed between creating the lock and writing its owner record
@@ -116,7 +125,8 @@ acquire() {
 
 has_commit() { # the ledger's commits list carries this operation id (JSON escapes quotes inside strings,
     # so the pattern can only match a real "commit_id" key, with any whitespace around the colon)
-    grep -Eq "\"commit_id\"[[:space:]]*:[[:space:]]*\"$1\"" "$LEDGER"
+    # all whitespace removed first: JSON may put spaces or newlines around the colon
+    tr -d ' \t\r\n' < "$LEDGER" | grep -qF "\"commit_id\":\"$1\""
 }
 
 older_than_2min() { [ -n "$(find "$1" -prune -mmin +2 2>/dev/null)" ]; }
@@ -164,6 +174,13 @@ done
 
 cmd=${1:-}
 case "$cmd" in
+release-guard)
+    # only after the person agreed: a guard older than two minutes is left by a crashed commit
+    [ -d "$GUARD" ] || { say "RESULT=nothing-to-release"; exit 0; }
+    older_than_2min "$GUARD" || fail 14 "the guard lock is recent; a commit may be running"
+    park "$GUARD" guard-released && say "RESULT=released"
+    exit 0
+    ;;
 check)
     OP=check
     acquire || fail 14 "the folder is busy"

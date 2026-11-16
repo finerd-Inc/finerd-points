@@ -51,6 +51,7 @@ PLAN = {
 TARGETS = {"github": None, "claude-directory": "claude", "chatgpt": "chatgpt"}
 LEGAL_TEXTS = {"TERMS.md", "PRIVACY.md"}
 ALLOWED_SUFFIXES = {".md", ".py", ".json", ".sh", ".css", ".png"}
+PNG_ALLOWED = {"assets/icon.png"}
 GITHUB_ONLY = re.compile(r"\n?<!-- github-build-only:start -->.*?<!-- github-build-only:end -->\n?", re.S)
 SKIP = {"__pycache__", ".DS_Store"}
 
@@ -113,8 +114,25 @@ def sync():
         print(f"{skill}: {len(want)} files")
 
 
+# What each shared source folder may hold. Anything else (a script disguised as an image, a loader) never
+# reaches a skill folder.
+SOURCE_FORMATS = {"lib": {".py", ".sh"}, "references": {".md"}, "facts": {".json", ".md"}, "apps": {".md"},
+                  "short-paths": {".md"}, "assets": {".css"}}
+PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+
 def check():
     problems = []
+    for sub, allowed in SOURCE_FORMATS.items():
+        for p in (SHARED / sub).rglob("*"):
+            if p.is_symlink():
+                problems.append(f"shared/{sub}/{p.relative_to(SHARED / sub)} is a symbolic link")
+            elif p.is_file() and not (set(p.parts) & SKIP) and p.suffix not in allowed:
+                problems.append(f"shared/{sub}/{p.relative_to(SHARED / sub)}: only {', '.join(sorted(allowed))} "
+                                f"files belong in shared/{sub}")
+    icon = PLUGIN / "assets" / "icon.png"
+    if icon.exists() and not icon.read_bytes().startswith(PNG_MAGIC):
+        problems.append("plugins/finerd-points/assets/icon.png is not a PNG image")
     for f in ROOT_COPIES:
         if not (PLUGIN / f).exists() or not filecmp.cmp(ROOT / f, PLUGIN / f, shallow=False):
             problems.append(f"plugins/finerd-points/{f} differs from {f}")
@@ -185,8 +203,10 @@ def package(target):
                     continue
                 if "apps" in rel.parts and rel.parts[rel.parts.index("apps") + 1] in excluded:
                     continue
-            if directory is not None and p.suffix not in ALLOWED_SUFFIXES and p.name not in ("LICENSE", "NOTICE"):
+            if p.suffix not in ALLOWED_SUFFIXES and p.name not in ("LICENSE", "NOTICE"):
                 sys.exit(f"The {target} build may not carry {rel} (only {', '.join(sorted(ALLOWED_SUFFIXES))})")
+            if p.suffix == ".png" and (str(rel) not in PNG_ALLOWED or not p.read_bytes().startswith(PNG_MAGIC)):
+                sys.exit(f"The {target} build may not carry {rel}: the only image is the PNG icon")
             data = p.read_bytes()
             if directory is not None and p.suffix == ".md":
                 data = GITHUB_ONLY.sub("\n", data.decode("utf-8")).encode("utf-8")

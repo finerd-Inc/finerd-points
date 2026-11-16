@@ -115,3 +115,65 @@ class Bridge(unittest.TestCase):
         p = next(p for p in resy["periods"] if p["key"] == "2026-H2")
         self.assertEqual((p["status"], p["used"]), ("used", 50.0))
         self.assertEqual(led["cards"][0].get("finance_link"), None)  # the ledger itself is not changed
+
+
+class ReviewRound2Report(unittest.TestCase):
+
+    def _gold(self, extra_sources=()):
+        led = fl.new_ledger("Rad", storage="folder")
+        b = [{"op": "add_card", "id": "gold", "person": "me", "nickname": "Gold", "catalog_ref": "amex-gold",
+              "opened_on": "2024-03-13"},
+             {"op": "add_inventory", "id": "gold", "kind": "card", "label": "Amex Gold", "person": "me"}] + \
+            list(extra_sources) + \
+            [{"op": "add_source", "id": "amex", "kind": "bank_card", "name": "American Express", "unit": "USD",
+              "accounts": [{"id": "gold-card", "label": "Gold Card", "person": "me", "unit": "USD",
+                            "inventory": "gold"}]}]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        rd = {"source": "amex", "account": "gold-card", "section": "activity", "read_id": "r1",
+              "requested": ["2026-01-01", "2026-11-16"], "covered": ["2026-01-01", "2026-11-16"],
+              "state": "complete", "terminal": "t", "continuity": "c", "read_at": "2026-11-16T12:00:00Z",
+              "unit": "USD", "rows": [{"date": "2026-09-10", "amount": 25, "description": "AMEX RESY CREDIT",
+                                       "status": "posted"}]}
+        bb, _ = fc.plan_read(led, rd)
+        fl.apply_batch(led, bb, fl.preview_batch(led, bb)[0])
+        return led
+
+    def _resy(self, led):
+        r = report.build(led, TODAY)
+        b = next(x for x in r["credits"]["cards"][0]["benefits"] if x["benefit"] == "resy-credit")
+        return next(p for p in b["periods"] if p["key"] == "2026-H2")
+
+    def test_an_aggregator_account_never_takes_the_cards_transactions(self):
+        aw = {"op": "add_source", "id": "aw", "kind": "aggregator", "name": "AwardWallet", "unit": "USD",
+              "accounts": [{"id": "aw-gold", "label": "Gold in AwardWallet", "person": "me", "unit": "USD",
+                            "inventory": "gold"}]}
+        self.assertEqual(self._resy(self._gold([aw]))["used"], 25.0)
+
+    def test_damaged_ledger_report_comes_from_the_backup_marked(self):
+        import subprocess
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "backups").mkdir()
+            good = sample()
+            (root / "backups" / "ledger.v3-abcdef12.json").write_text(__import__("json").dumps(good))
+            (root / "ledger.json").write_text("{ damaged")
+            p = subprocess.run([sys.executable, str(ROOT / "shared" / "lib" / "report.py"), "--ledger",
+                                str(root / "ledger.json"), "--today", "2026-11-16"], capture_output=True, text=True)
+            self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+            self.assertIn("shown read-only from the backup ledger.v3-abcdef12.json", p.stdout)
+
+
+class ReviewRound2Credits(unittest.TestCase):
+
+    def test_uncatalogued_card_periods_count_in_their_own_year(self):
+        import credits
+        import fpfacts as ff
+        led = fl.new_ledger("T", storage="folder")
+        b = [{"op": "add_card", "id": "local", "person": "me", "nickname": "Local"}]
+        for key in ("2025", "2026"):
+            b.append({"op": "observe", "subject": f"benefit:local/travel/{key}", "field": "used_amount", "value": 100,
+                      "source": {"kind": "issuer_page"}, "as_of": "2026-11-16", "confidence": "confirmed"})
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        res = credits.analyze(led, ff.load_catalog(ROOT / "shared" / "facts"), {}, [], TODAY, 2026)
+        self.assertEqual(credits.totals(res)["used"], 100)

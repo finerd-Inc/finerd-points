@@ -330,3 +330,33 @@ class ReviewRound1Identity(unittest.TestCase):
         _, s = read(led, [row("2026-09-18", 40, "Dining")], ["2026-09-17", "2026-11-16"])
         self.assertEqual(s["revised"], 0)
         self.assertEqual(led["records"][0]["status"], "pending")
+
+
+class ReviewRound2Identity(unittest.TestCase):
+
+    def test_a_row_corrected_twice_counts_once(self):
+        led = base_ledger()
+        read(led, [row("2026-10-01", 100, "SHOPPING")], ["2026-09-01", "2026-11-16"])
+        read(led, [row("2026-10-01", 110, "SHOPPING")], ["2026-09-01", "2026-11-16"])
+        read(led, [row("2026-10-01", 120, "SHOPPING")], ["2026-09-01", "2026-11-16"])
+        self.assertEqual(total(led)[0], 100)  # the earliest, until the person decides; never 220 or 330
+
+    def test_one_event_in_three_sources_counts_once(self):
+        led = base_ledger()
+        b = [{"op": "add_source", "id": "stmt", "kind": "statement", "name": "Statement",
+              "accounts": [{"id": "st-hyatt", "label": "Hyatt statement", "person": "me", "unit": "points",
+                            "inventory": "inv-hyatt"}]}]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        read(led, [row("2026-10-05", 100, "Bonus")], ["2026-09-01", "2026-11-16"], source="aw", account="aw-hyatt")
+        read(led, [row("2026-10-05", 100, "Bonus")], ["2026-09-01", "2026-11-16"])
+        read(led, [row("2026-10-06", 100, "Bonus")], ["2026-09-01", "2026-11-16"], source="stmt", account="st-hyatt")
+        counted, _, _ = fc.counted_records(led)
+        self.assertEqual(sum(r["amount"] for r in counted), 100)
+        self.assertEqual(counted[0]["source"], "hyatt")  # the direct site's row, not the aggregator's
+
+    def test_site_id_must_be_seen_in_consecutive_reads(self):
+        led = base_ledger()
+        for sid in ("T1", "T1", "T2"):
+            read(led, [row("2026-10-01", 100, "SHOPPING", site_id=sid)], ["2026-09-17", "2026-11-16"])
+        _, s = read(led, [row("2026-10-05", 130, "SHOPPING ADJ", site_id="T1")], ["2026-09-17", "2026-11-16"])
+        self.assertEqual(s["revised"], 0)

@@ -370,6 +370,15 @@ def apply_and_publish(folder, batch, confirm_hash, writer="claude-code", session
 REMOVED = "(removed at a household member's request)"
 
 
+def _load_json(path):
+    if Path(path).is_symlink():
+        return None
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
 def _rewrite_json(path, fn):
     if Path(path).is_symlink():
         return False
@@ -392,7 +401,11 @@ def scrub_person(folder, person_id, led_now):
     `open --cleanup` runs it for every redaction not yet applied to the files. Returns the files changed."""
     root = _root(folder)
     gone_accounts = set()
-    for path in sorted((root / "backups").glob("*.json")) + sorted((root / "work").glob("cand-*.json")):
+    def is_ledger(x):
+        return isinstance(x, dict) and "people" in x and "_meta" in x
+
+    for path in sorted((root / "backups").glob("*.json")) + sorted(
+            p for p in (root / "work").glob("*.json") if is_ledger(_load_json(p))):
         def scrub_ledger(led):
             if not isinstance(led, dict) or "people" not in led:
                 return None
@@ -412,20 +425,24 @@ def scrub_person(folder, person_id, led_now):
     def mentions(op):
         return fl.names_removed(op, refs)
 
-    for path in sorted((root / "journal").glob("*.batch.json")) + sorted((root / "work").glob("*.batch.json")) + \
-            sorted((root / "work").glob("batch-*.json")):
-        if _rewrite_json(path, lambda b: [op for op in b if not mentions(op)] if isinstance(b, list) else None):
-            changed.append(str(path.relative_to(root)))
-    for path in sorted((root / "work").glob("read-*.json")):
-        def scrub_reads(r):
-            reads = r if isinstance(r, list) else [r]
-            keep = [x for x in reads if isinstance(x, dict) and not mentions(x)
-                    and not mentions(x.get("source_op") or {})]
-            return keep if isinstance(r, list) else (keep[0] if keep else {"removed": REMOVED})
-        if _rewrite_json(path, scrub_reads):
-            changed.append(str(path.relative_to(root)))
-    for path in sorted((root / "work").glob("preview-*.json")):
-        if _rewrite_json(path, lambda p: {**p, "text": REMOVED} if isinstance(p, dict) else None):
+    work_files = sorted(p for p in (root / "work").glob("*.json") if not p.is_symlink())
+    for path in sorted((root / "journal").glob("*.batch.json")) + work_files:
+        data = _load_json(path)
+        if data is None or is_ledger(data):
+            continue
+        if isinstance(data, list) and all(isinstance(x, dict) and "op" in x for x in data):       # a batch
+            fn = lambda b: [op for op in b if not mentions(op)]  # noqa: E731
+        elif isinstance(data, dict) and "text" in data and "hash" in data:                          # a preview
+            fn = lambda p: {**p, "text": REMOVED}  # noqa: E731
+        elif isinstance(data, (dict, list)):                                                           # reads
+            def fn(r):
+                reads = r if isinstance(r, list) else [r]
+                keep = [x for x in reads if isinstance(x, dict) and not mentions(x)
+                        and not mentions(x.get("source_op") or {})]
+                return keep if isinstance(r, list) else (keep[0] if keep else {"removed": REMOVED})
+        else:
+            continue
+        if _rewrite_json(path, fn):
             changed.append(str(path.relative_to(root)))
     return changed
 
@@ -492,7 +509,7 @@ def mark_done(folder, *names):
 
 
 def cleanup(folder, now=None, keep_days=30):
-    """Remove, 30 days after they were finished: candidates of committed or abandoned operations, working files
+    """Remove, 30 days after they were finished: candidates of committed operations, working files
     marked done, saved previews; released locks; backups beyond the last 20 plus one per month. Nothing else in
     work/ is touched — an unfinished read or batch stays until it is committed or discarded. Nothing is followed
     through a symbolic link. A chat cannot delete files, so this runs when Claude Code or Cowork opens the
@@ -515,7 +532,7 @@ def cleanup(folder, now=None, keep_days=30):
             entry = json.loads(j.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        if entry.get("state") in ("committed", "abandoned"):
+        if entry.get("state") == "committed":  # an abandoned attempt stays until it is re-applied or discarded
             finished[Path(entry.get("candidate", "")).name] = j.stat().st_mtime
     for p in list((root / "work").iterdir()):
         if p.is_symlink() or not p.is_file():

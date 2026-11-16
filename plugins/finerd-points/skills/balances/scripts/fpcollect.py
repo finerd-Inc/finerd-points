@@ -305,7 +305,9 @@ def _apply_record_change(led, op, ts):
     if k == "seen_record":
         if op["read_id"] not in rec["seen_in"]:
             rec["seen_in"].append(op["read_id"])
-        if op.get("site_id") and op["site_id"] == rec.get("site_id") and \
+        if op.get("site_id_changed"):
+            rec["site_id_seen"] = []
+        elif op.get("site_id") and op["site_id"] == rec.get("site_id") and \
                 op["read_id"] not in rec.setdefault("site_id_seen", []):
             rec["site_id_seen"].append(op["read_id"])
     elif k == "revise_record":
@@ -398,7 +400,8 @@ V2 = {
                    {"id", "source", "account", "section", "read_id", "date", "amount", "unit", "description",
                     "status", "evidence", "site_id"},
                    check_add_record, _apply_add_record),
-    "seen_record": (("record", "read_id"), {"record", "read_id", "site_id"}, check_record_change, _apply_record_change),
+    "seen_record": (("record", "read_id"), {"record", "read_id", "site_id", "site_id_changed"}, check_record_change,
+                    _apply_record_change),
     "revise_record": (("record", "read_id", "reason", "new"), {"record", "read_id", "reason", "new"},
                       check_record_change, _apply_record_change),
     "flag_not_shown": (("record", "read_id"), {"record", "read_id"}, check_record_change, _apply_record_change),
@@ -519,6 +522,8 @@ def plan_read(led, read):
             op = {"op": "seen_record", "record": e["id"], "read_id": rid}
             if r.get("site_id") and r["site_id"] == e.get("site_id"):
                 op["site_id"] = r["site_id"]
+            elif e.get("site_id"):
+                op["site_id_changed"] = True  # this read showed another id (or none): stability starts over
             batch.append(op)
             summary["known"] += 1
 
@@ -573,10 +578,11 @@ def plan_read(led, read):
     # 5. new rows, with their possible counterparts
     others = [e for e in led["records"] if _active(e) and e["source"] != src_id]
     inv = _inventory_of(led, src_id, acc)
-    # A record already linked (and not decided «different») is taken: counterparts pair one to one, so two
-    # identical events on one side never both hide behind one record on the other.
-    linked = {x for ev in led["events"] if ev.get("kind") == "link" and ev.get("state") != "different"
-              for x in ev["records"]}
+    # Records joined by links (not decided «different») form one event group. A new row is compared with
+    # groups: it joins at most one, and within this read each group takes at most one new row, so two
+    # identical events never hide behind one, while a row corrected twice still joins its group.
+    group_of = _event_groups(led)
+    used_groups = set()
     used_ids = {e["id"] for e in led["records"]}
     for n in left_rows:
         r = rows[n]
@@ -594,38 +600,67 @@ def plan_read(led, read):
         counterpart = None
         best = None
         for e in mine:
-            if e["id"] in matched or e["id"] in linked or e["status"] != "posted" or \
+            g = group_of.get(e["id"], e["id"])
+            if e["id"] in matched or g in used_groups or e["status"] != "posted" or \
                     _sign(e["amount"]) != _sign(r["amount"]):
                 continue
             near = abs(_days(e["date"], r["date"])) <= WINDOW_DAYS and \
                 (e["amount"] == r["amount"] or similar(e["description"], r["description"]))
-            gone = e in not_shown
+            gone = e in not_shown or bool(e.get("not_shown"))
             if near or gone:
-                score = (0 if e["amount"] == r["amount"] else 1, abs(_days(e["date"], r["date"])))
+                score = (e["id"] in group_of, 0 if e["amount"] == r["amount"] else 1, abs(_days(e["date"], r["date"])))
                 if best is None or score < best:
                     best, counterpart = score, (e, "within 14 days" if near else "no longer shown in the same interval")
         if counterpart:
             e, why = counterpart
-            linked.add(e["id"])
-            linked.add(new_id)
-            batch.append({"op": "link_records", "a": e["id"], "b": new_id, "relation": "possibly_same",
+            g = group_of.get(e["id"], e["id"])
+            used_groups.add(g)
+            keep = _group_keep(led, g, group_of, e)
+            batch.append({"op": "link_records", "a": keep["id"], "b": new_id, "relation": "possibly_same",
                           "basis": f"same account and sign, {why}"})
             summary["possibly_same"] += 1
             continue
         if inv:
             cross = [e for e in others
-                     if e["status"] == "posted" and e["id"] not in linked
+                     if e["status"] == "posted" and group_of.get(e["id"], e["id"]) not in used_groups
                      and _inventory_of(led, e["source"], e["account"]) == inv
                      and _sign(e["amount"]) == _sign(r["amount"]) and abs(_days(e["date"], r["date"])) <= CROSS_DAYS
                      and abs(e["amount"] - r["amount"]) <= 0.01 * abs(r["amount"])]
             if cross:
-                e = min(cross, key=lambda x: (abs(_days(x["date"], r["date"])), abs(x["amount"] - r["amount"])))
-                linked.add(e["id"])
-                linked.add(new_id)
+                e = min(cross, key=lambda x: (x["id"] in group_of, abs(_days(x["date"], r["date"])),
+                                              abs(x["amount"] - r["amount"])))
+                g = group_of.get(e["id"], e["id"])
+                used_groups.add(g)
+                e = _group_keep(led, g, group_of, e)
                 batch.append({"op": "link_records", "a": e["id"], "b": new_id, "relation": "probably_same",
                               "basis": f"same account in {e['source']}, date and amount close"})
                 summary["probably_same_other_source"] += 1
     return batch, summary
+
+
+def _event_groups(led):
+    """record id → group id (the smallest record id in its group) over links not decided «different»."""
+    parent = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for ev in led.get("events", []):
+        if ev.get("kind") == "link" and ev.get("state") != "different" and len(ev.get("records", [])) == 2:
+            a, b = find(ev["records"][0]), find(ev["records"][1])
+            if a != b:
+                parent[max(a, b)] = min(a, b)
+    return {x: find(x) for x in list(parent)}
+
+
+def _group_keep(led, g, group_of, fallback):
+    """The record a group is counted by: a direct source's over an aggregator's, then the earliest added."""
+    members = [r for r in led["records"] if group_of.get(r["id"]) == g and _active(r)] or [fallback]
+    kinds = {s["id"]: s["kind"] for s in led.get("sources", [])}
+    return min(members, key=lambda r: (kinds.get(r["source"]) == "aggregator", r.get("added_at", ""), r["id"]))
 
 
 def _inventory_of(led, source_id, account_id):

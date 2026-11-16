@@ -109,31 +109,43 @@ def ledger_transactions(led):
     cards = {c["id"]: c for c in view["cards"]}
     counted, _, _ = fc.counted_records(led)
     accounts, txns = {}, []
+    rows_of = {}
+    for r in counted:
+        if r["section"] == "activity":  # issuer benefit trackers are observations, not rows: never counted twice
+            rows_of.setdefault((r["source"], r["account"]), []).append(r)
+    # Only a card's own site or statement counts as its transactions (never an aggregator), and only one source
+    # account per card: the one with the most counted rows.
+    best = {}
     for s_ in led.get("sources", []):
+        if s_["kind"] not in ("bank_card", "statement"):
+            continue
         for a in s_["accounts"]:
             card = cards.get(a.get("inventory"))
             unit = a.get("unit") or s_.get("unit") or ""
-            if not card or not CURRENCY.match(str(unit)) or card.get("finance_link"):
+            if not card or card.get("finance_link") or not CURRENCY.match(str(unit)):
                 continue  # a finance app, when linked, stays the source of the card's transactions
-            aid = f"ledger:{s_['id']}/{a['id']}"
-            card["finance_link"] = {"app": "ledger", "account_id": aid, "account_name": a.get("label") or a["id"]}
-            cov = fc.coverage_state(led, s_["id"], a["id"], "activity") or \
-                fc.coverage_state(led, s_["id"], a["id"], "credits")
-            covered = (cov or {}).get("covered")
-            accounts[aid] = {"account_id": aid, "name": a.get("label") or a["id"],
-                             "coverage": {"from": covered[0], "to": covered[1]} if covered else {"from": None, "to": None},
-                             "complete": bool(cov and cov["state"] == "complete"),
-                             "coverage_note": None if cov and cov["state"] == "complete" else
-                             "The card's site was not read completely for this period.", "scope": "filtered"}
-            for r in counted:
-                if r["source"] != s_["id"] or r["account"] != a["id"] or r["section"] not in ("activity", "credits"):
-                    continue
-                direction = "credit" if r["amount"] > 0 else "debit"
-                txns.append({"id": r["id"], "account_id": aid, "date": r["date"], "posted_date": None,
-                             "amount": abs(float(r["amount"])), "currency": unit, "direction": direction,
-                             "kind": _kind(r["description"], direction), "description": r["description"],
-                             "merchant": None, "category": None, "pending": False, "reversal_of": None,
-                             "reversal_hint": bool(nz.REVERSAL_RE.search(r["description"]))})
+            n = len(rows_of.get((s_["id"], a["id"]), []))
+            if n and (card["id"] not in best or n > best[card["id"]][0]):
+                best[card["id"]] = (n, s_, a)
+    for card_id, (_, s_, a) in sorted(best.items()):
+        card = cards[card_id]
+        unit = a.get("unit") or s_.get("unit")
+        aid = f"ledger:{s_['id']}/{a['id']}"
+        card["finance_link"] = {"app": "ledger", "account_id": aid, "account_name": a.get("label") or a["id"]}
+        cov = fc.coverage_state(led, s_["id"], a["id"], "activity")
+        covered = (cov or {}).get("covered")
+        accounts[aid] = {"account_id": aid, "name": a.get("label") or a["id"],
+                         "coverage": {"from": covered[0], "to": covered[1]} if covered else {"from": None, "to": None},
+                         "complete": bool(cov and cov["state"] == "complete"),
+                         "coverage_note": None if cov and cov["state"] == "complete" else
+                         "The card's site was not read completely for this period.", "scope": "filtered"}
+        for r in rows_of.get((s_["id"], a["id"]), []):
+            direction = "credit" if r["amount"] > 0 else "debit"
+            txns.append({"id": r["id"], "account_id": aid, "date": r["date"], "posted_date": None,
+                         "amount": abs(float(r["amount"])), "currency": unit, "direction": direction,
+                         "kind": _kind(r["description"], direction), "description": r["description"],
+                         "merchant": None, "category": None, "pending": False, "reversal_of": None,
+                         "reversal_hint": bool(nz.REVERSAL_RE.search(r["description"]))})
     return view, accounts, txns
 
 
@@ -162,6 +174,8 @@ def build(led, today, txn_paths=None, days=45, year=None, facts_dir=None):
 
 def to_markdown(r):
     out = [f"# Points & Miles — as of {r['as_of']} (ledger version {r['ledger_version']})", ""]
+    if r.get("from_backup"):
+        out += [f"**{r['from_backup']}**", ""]
     out.append("## Balances")
     out.append("| Program | Balance | As of | Source | State |")
     out.append("|---|---:|---|---|---|")
@@ -213,12 +227,21 @@ def main():
     ap.add_argument("--html", help="also write the HTML page here (in the ledger folder's reports/)")
     a = ap.parse_args()
     today = dt.date.fromisoformat(a.today) if a.today else dt.date.today()
+    from_backup = None
     try:
         led = fl.load(a.ledger)
     except fl.LedgerError as e:
-        print(json.dumps({"refused": str(e)}))
-        sys.exit(2)
+        import fpstore
+        good = fpstore.newest_good_backup(Path(a.ledger).resolve().parent)
+        if not good:
+            print(json.dumps({"refused": str(e)}))
+            sys.exit(2)
+        led, from_backup = good
     r = build(led, today, a.transactions, a.days, a.year, a.facts)
+    if from_backup:
+        r["from_backup"] = (f"ledger.json cannot be read; this report is shown read-only from the backup "
+                            f"{from_backup} (version {led['version']}). Nothing is written until you decide how to "
+                            f"restore.")
     if a.html:
         import render_report as rr
         page = rr.render(led, today, "Points & Miles", r["year_in_review"], r["credits"],

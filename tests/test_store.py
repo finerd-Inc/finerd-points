@@ -571,3 +571,62 @@ class ReviewRound1(unittest.TestCase):
                    "source": {"kind": "person"}, "as_of": "2026-11-16", "confidence": "confirmed"}]
         with self.assertRaises(fl.LedgerError):
             fl.preview_batch(led, replay)
+
+
+class ReviewRound2Store(unittest.TestCase):
+
+    def test_abandoned_candidate_is_kept(self):
+        with Folder() as root:
+            first_ledger(root)
+            op = Recovery()._planned(root, publish_too=False)
+            st.check(root)  # → abandoned
+            old = time.time() - 40 * 86400
+            for p in list((root / "work").iterdir()) + list((root / "journal").iterdir()):
+                os.utime(p, (old, old))
+            st.cleanup(root)
+            self.assertTrue((root / "work" / f"cand-{op}.json").exists())
+
+    def test_old_guard_is_reported_not_released(self):
+        with Folder() as root:
+            first_ledger(root)
+            (root / ".lock-guard").mkdir()
+            (root / ".lock").mkdir()
+            old = time.time() - 300
+            for p in (root / ".lock-guard", root / ".lock"):
+                os.utime(p, (old, old))
+            led, bh, bv = st.read(root)
+            res = st.publish(root, led, bh, bv, env={"FP_LOCK_WAIT": "2"})
+            self.assertEqual(res.get("code"), "14")
+            self.assertTrue(any("release-guard" in n for n in res["notes"]))
+            code, out = sh(root, "release-guard")
+            self.assertEqual(out.get("result"), "released")
+            self.assertEqual(st.publish(root, led, bh, bv)["result"], "committed")
+
+    def test_commit_lookup_with_a_newline_after_the_colon(self):
+        with Folder() as root:
+            first_ledger(root)
+            led, bh, bv = st.read(root)
+            op = st.new_op_id()
+            cand = st.prepare_candidate(led, bv, op, "x")
+            text = json.dumps(cand, indent=1).replace(f'"commit_id": "{op}"', f'"commit_id":\n "{op}"')
+            (root / "ledger.json").write_text(text)
+            (root / "journal" / f"{op}.json").write_text(
+                '{\n  "op_id": "%s",\n  "base_version": %d,\n  "base_hash": "%s",\n  "new_hash": "x",\n'
+                '  "state": "planned"\n}\n' % (op, bv, bh))
+            self.assertIn(f"{op} committed", st.check(root)["recovered"])
+
+    def test_done_files_are_scrubbed_too(self):
+        with Folder() as root:
+            first_ledger(root)
+            add = [{"op": "add_person", "id": "anna", "name": "Anna", "consent": {"given": True, "on": "2026-11-16"}}]
+            h, _ = st.preview(root, add)
+            st.apply_and_publish(root, add, h)
+            (root / "work" / "batch-anna.json").write_text(json.dumps([{"op": "add_card", "id": "ac", "person": "anna",
+                                                                         "nickname": "Anna card"}]))
+            st.mark_done(root, "batch-anna.json")
+            led, bh, bv = st.read(root)
+            hh, _, _ = fl.redaction_plan(led, "anna")
+            fl.redact_person(led, "anna", hh)
+            st.publish(root, led, bh, bv)
+            st.scrub_pending_redactions(root)
+            self.assertNotIn("anna", (root / "work" / "done-batch-anna.json").read_text())
