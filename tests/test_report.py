@@ -70,3 +70,21 @@ class Report(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Acceptance(unittest.TestCase):
+
+    def test_compare_finds_missing_extra_and_partial(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import acceptance_compare as ac
+        led = sample()
+        ref = {"accounts": [{"source": "hyatt", "account": "woh", "section": "activity",
+                             "interval": ["2026-01-01", "2026-11-16"],
+                             "rows": [["2026-10-05", 5000, "alert(1) Stay"], ["2026-03-01", 900, "Old stay"]],
+                             "balance": {"subject": "account:inv-hyatt", "value": 52310}}]}
+        ok, out = ac.compare(led, ref)
+        self.assertFalse(ok)
+        kinds = {list(p)[0] for p in out[0]["problems"]}
+        self.assertEqual(kinds, {"missing_rows", "coverage"})  # the sample read is partial
+        ref["accounts"][0]["excluded"] = {"reason": "frozen before the run"}
+        self.assertTrue(ac.compare(led, ref)[0])
