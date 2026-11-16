@@ -184,8 +184,8 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                         op["note"] = f"in {t['currency']}: add fx_rate and fx_source before recording"
                     proposals.append(op)
         if not acc and cf:
-            questions.append(f"Your {card['nickname']} has no transactions connected. Connect it in your finance app "
-                             f"or export its transactions (CSV), or tell me which of its credits you used.")
+            questions.append(f"For your {card['nickname']}, open the issuer's benefits page so I can read which credits "
+                             f"you used, give me its statement or CSV, or tell me which credits you used.")
         if not cf:
             entry["note"] = "This card is not in the facts catalog yet; credits cannot be tracked."
             result_cards.append(entry)

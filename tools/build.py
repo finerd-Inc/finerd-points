@@ -34,11 +34,13 @@ PLAN = {
                        "facts": True, "refs": True},
     "balances":       {"scripts": ["fpledger.py", "ledger.py", "balances.py"] + STORE, "facts": False, "refs": True},
     "points-reports": {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py", "yir.py",
-                                   "balances.py", "spend.py", "render_report.py"] + STORE,
+                                   "balances.py", "spend.py", "render_report.py", "expirations.py",
+                                   "report.py"] + STORE,
                        "facts": True, "refs": True, "extra_refs": ["year-in-review-formula.md"],
                        "assets": True},
-    "collect":        {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py"] + STORE,
-                       "facts": True, "refs": True},
+    "collect":        {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py", "yir.py",
+                                   "balances.py", "expirations.py", "render_report.py", "report.py"] + STORE,
+                       "facts": True, "refs": True, "assets": True},
     "facts-check":    {"scripts": ["fpfacts.py"], "tools": ["check_facts.py"], "facts": True, "refs": False},
 }
 # Connector guides per build. The Claude directory build names only Google, finerd (the publisher's

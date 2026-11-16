@@ -25,7 +25,7 @@ E = html.escape
 CHIP = {
     "used": "green", "partly used": "blue", "not used yet": "warning", "no credit posted": "red",
     "unknown": "gray", "ask": "gray", "available (percentage back, up to the cap)": "gray",
-    "current": "green", "stale": "warning",
+    "current": "green", "stale": "warning", "conflicting": "red", "preliminary": "warning",
 }
 
 
@@ -213,34 +213,72 @@ def expirations_section(ex):
     return "\n".join(out)
 
 
+def _safe_link(url):
+    return url if isinstance(url, str) and url.startswith("https://") and "\"" not in url and "'" not in url else None
+
+
 def balances_section(t):
     rows = []
     for r in t["accounts"]:
         b = "unknown" if r["balance"] is None else f"{r['balance']:,} {r['unit']}"
         src = "" if not r["source"] else (r["source"].get("name") or r["source"]["kind"])
+        link = _safe_link(r.get("link"))
+        src_html = f"<a href='{E(link)}' rel='noopener noreferrer'>{E(src)}</a>" if link else E(src)
         note = f"{r['age_days']} days old" if r["state"] == "stale" else ""
         rows.append(f"<tr><td>{E(r['nickname'])}</td><td class='r'>{E(b)}</td><td>{E(r['as_of'] or '—')}</td>"
-                    f"<td>{E(src)}</td><td>{chip(r['state'])} <span class='note'>{E(note)}</span></td></tr>")
+                    f"<td>{src_html}</td><td>{chip(r['state'])} <span class='note'>{E(note)}</span></td></tr>")
+        g = r.get("aggregator")
+        if g:
+            rows.append(f"<tr><td class='note'>↳ {E(g['source'].get('name') or 'aggregator')}</td>"
+                        f"<td class='r note'>{g['balance']:,}</td><td class='note'>{E(g.get('freshness') or 'age unknown')}"
+                        f"</td><td class='note'>not counted</td><td></td></tr>")
     return ("<section id='balances'><h2>Balances</h2><p class='lead'>Each number with its date and source. Balances of "
             "different programs are not added up, and points never enter net worth.</p><div class='scroll'><table>"
             "<thead><tr><th>Program</th><th class='r'>Balance</th><th>As of</th><th>Source</th><th>State</th></tr>"
             "</thead><tbody>" + "".join(rows) + "</tbody></table></div></section>")
 
 
-def render(led, today, title, yir=None, credits=None, expirations=None):
+def collection_section(c, refresh_note):
+    rows = "".join(
+        f"<tr><td>{E(a['source'])}</td><td>{E(a['account'])}</td><td class='r'>{a['rows_counted']:,}</td>"
+        f"<td class='d'>{E(a['first'] or '—')} – {E(a['last'] or '—')}</td>"
+        f"<td>{chip('preliminary') if a['preliminary'] else ''}</td></tr>" for a in c["accounts"])
+    out = ["<section id='collected'><h2>What was read</h2>",
+           "<div class='scroll'><table><thead><tr><th>Source</th><th>Account</th><th class='r'>Rows</th>"
+           f"<th>Dates</th><th></th></tr></thead><tbody>{rows}</tbody></table></div>"]
+    if c["problems"]:
+        out.append("<h3>Could not be read completely</h3><ul class='q'>" + "".join(
+            f"<li><strong>{E(p['what'])}</strong>: {E(p['state'])} — {E(p['why'])}</li>" for p in c["problems"]) + "</ul>")
+    if c["open_links"] or c["rows_not_shown"]:
+        out.append(f"<p class='lead'>Waiting for your decision: {c['open_links']} pair(s) of rows that may be the same, "
+                   f"{c['rows_not_shown']} row(s) no longer shown on a site. The earlier rows stay counted until you "
+                   f"decide.</p>")
+    out.append(f"<p class='note'>{E(refresh_note)}</p></section>")
+    return "\n".join(out)
+
+
+def render(led, today, title, yir=None, credits=None, expirations=None, collection=None, unknown_deadlines=None,
+           balances_table=None, refresh_note=None):
     cur = led["_meta"]["setup"]["report_currency"]
     CUR["sym"] = SYM.get(cur, cur + " ")
     person = next((p["name"] for p in led["people"] if p.get("role") == "owner"), "")
     parts = [f"<header><h1>{E(title)}</h1><div class='meta'>{E(person)} · as of {today.isoformat()} · "
              f"ledger version {led['version']} · amounts in {E(led['_meta']['setup']['report_currency'])}</div></header>"]
-    if yir:
-        parts.append(yir_section(yir))
+    # The order of the report (spec v2): balances, credits, deadlines, Year in Review, what was read.
+    if led["accounts"]:
+        parts.append(balances_section(balances_table or bal.table(led, today)))
     if credits:
         parts.append(credits_section(credits))
     if expirations:
-        parts.append(expirations_section(expirations))
-    if led["accounts"]:
-        parts.append(balances_section(bal.table(led, today)))
+        sec = expirations_section(expirations)
+        if unknown_deadlines:
+            sec = sec.replace("</section>", "<h3>Deadlines whose date is unknown</h3><ul class='q'>" + "".join(
+                f"<li>{E(u)}</li>" for u in unknown_deadlines) + "</ul></section>")
+        parts.append(sec)
+    if yir:
+        parts.append(yir_section(yir))
+    if collection:
+        parts.append(collection_section(collection, refresh_note or ""))
     parts.append("<footer>Made with finerd points from your own ledger; nothing was sent anywhere. Card terms come "
                  "from the finerd points facts catalog (issuer pages plus independent reviews, with check dates). "
                  "Method: «Points Are Not Just Points» framework v1.2, §5.1. Estimates for your information, not "
