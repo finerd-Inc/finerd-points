@@ -16,6 +16,13 @@ and that it is theirs. If the mail connector returns message text (subjects or s
 a sender-and-date search, or the mailbox is shared with someone not covered by the ledger, do not
 run the search: say so, and let the person list their programs instead.
 
+With the Gmail connector: call `search_threads` with `view: "THREAD_VIEW_METADATA_ONLY"` (it returns
+sender, recipients and date, no subject and no snippet — checked 16 November 2026) and a query of only
+sender domains and a date, for example `from:(hyatt.com OR marriott.com OR aa.com) after:2024/11/16`;
+page through `pageToken`. From each message take only the domain of the sender, and only when the
+sender is not the person; ignore display names and recipients; never call `get_thread` or open a
+message. If the connector offers no such view, do not search.
+
 **2. Reading a program email the person asks you to read** (`balances`, `expirations`): only these
 fields — program, member nickname (never the member number), balance with its date, expiry date and
 rule, certificate type and expiry, status tier and progress, redemption points, fees and route or
