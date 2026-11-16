@@ -78,8 +78,10 @@ class LedgerError(Exception):
 
 # Keys whose values are identifiers (bank or app ids), never scanned as card numbers.
 ID_KEYS = {"id", "ref", "op_id", "event_id", "destination_id", "account_id", "transaction_id", "target",
-           "subject", "ledger_id", "match_key", "calendar_id", "observation", "site_id", "read_id", "commit_id",
-           "record", "link", "a", "b", "source", "account", "inventory"}
+           "subject", "ledger_id", "match_key", "calendar_id", "observation"}
+# In schema-2 operations these keys hold generated or site ids, never free text (v1 «source» is free text).
+ID_KEYS_V2 = ID_KEYS | {"site_id", "read_id", "commit_id", "record", "link", "a", "b", "source", "account",
+                        "inventory"}
 SECRET_KEYS = re.compile(r"(?i)^(password|passcode|pin|otp|one[_ -]?time[_ -]?code|cvv|cvc|security[_ -]?code|"
                          r"api[_ -]?key|secret|token|access[_ -]?token|refresh[_ -]?token|ssn|"
                          r"social[_ -]?security|passport|member[_ -]?number|account[_ -]?number|card[_ -]?number)$")
@@ -122,32 +124,33 @@ def _has_card_number(text):
     return False
 
 
-def scan_forbidden(obj, _key=None):
+def scan_forbidden(obj, _key=None, id_keys=None):
     """Return the kinds of data in obj that must never be stored (spec appendix F)."""
+    id_keys = ID_KEYS if id_keys is None else id_keys
     found = set()
     if isinstance(obj, dict):
         for k, v in obj.items():
             if SECRET_KEYS.match(str(k)) and v not in (None, "", False):
                 found.add("a password, code, key or ID number")
-            found |= set(scan_forbidden(v, str(k)))
-            found |= set(scan_forbidden(str(k)))
+            found |= set(scan_forbidden(v, str(k), id_keys))
+            found |= set(scan_forbidden(str(k), None, id_keys))
         return sorted(found)
     if isinstance(obj, list):
         for v in obj:
-            found |= set(scan_forbidden(v, _key))
+            found |= set(scan_forbidden(v, _key, id_keys))
         return sorted(found)
     if not isinstance(obj, str):
         return []
     for rx, why in SECRET_TEXT:
         if rx.search(obj):
             found.add(why)
-    if (_key not in ID_KEYS) and _has_card_number(obj):
+    if (_key not in id_keys) and _has_card_number(obj):
         found.add("a full card number")
     return sorted(found)
 
 
-def _refuse_forbidden(obj, where):
-    bad = scan_forbidden(obj)
+def _refuse_forbidden(obj, where, id_keys=None):
+    bad = scan_forbidden(obj, None, id_keys)
     if bad:
         raise LedgerError(f"{where} contains {', '.join(bad)}. Remove it; finerd points never stores card "
                           f"numbers, passwords, codes, keys, member numbers or ID numbers.")
@@ -724,7 +727,7 @@ def _check_op(led, op, i, staged_ids):
             raise LedgerError(f"Step {i + 1} ({kind}): unknown field(s) {', '.join(unknown)}.")
         if _secret_keys(op):
             raise LedgerError(f"Step {i + 1} ({kind}): passwords, codes, keys and ID numbers are never stored.")
-        _refuse_forbidden(op, f"Step {i + 1} ({kind})")
+        _refuse_forbidden(op, f"Step {i + 1} ({kind})", ID_KEYS_V2)
         EXTRA_OPS[kind]["check"](led, op, i, staged_ids)
         return
     if kind not in REQUIRED:

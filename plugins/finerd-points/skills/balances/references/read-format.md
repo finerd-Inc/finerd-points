@@ -39,8 +39,8 @@ batch the person previews.
   consent) and, when known, the inventory item it belongs to. For a card's own site use the card's id as
   `inventory` and the currency as `unit` (for example `USD`): its activity rows then count as the card's
   transactions for credits.
-- `section`: `activity` (every dated row, including statement credits on a card's activity), `certificates`,
-  or another short name. What an issuer's benefits tracker shows («$50 of $50 used») is not a row: record it
+- `section`: `activity` (every dated row, including statement credits on a card's activity) or
+  `certificates`; nothing else is accepted. What an issuer's benefits tracker shows («$50 of $50 used») is not a row: record it
   as an observation (`used_amount` from `issuer_page`, with `allowance` and `period_end` when shown).
 - `covered`: the interval this read covers **completely**, or `null` if none. `state`:
   `complete` (needs `terminal`, `continuity` and `covered`), `ends_unreconciled`, `partial`,

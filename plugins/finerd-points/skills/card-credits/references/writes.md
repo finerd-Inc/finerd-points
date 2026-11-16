@@ -29,9 +29,9 @@
      --batch <file> --confirm <batch hash> --seen seen.json --out outbox`;
    - deliver the three outbox files into `<folder>/work/` under their own names (never overwrite a
      file), then run on the computer the command `chat-prepare` printed and read its `RESULT` line;
-   - `RESULT=refused CODE=10` means another conversation wrote first: rename the delivered files to
-     `done-<name>` on the computer, bring `ledger.json` in again and repeat `chat-prepare` with the same
-     batch; if it answers `needs_preview`, show the new text.
+   - after any refusal, rename the delivered files to `done-<name>` on the computer (they are never
+     published). `RESULT=refused CODE=10` means another conversation wrote first: bring `ledger.json` in
+     again and repeat `chat-prepare` with the same batch; if it answers `needs_preview`, show the new text.
    - the outcome of a write into another app (step 7): `ledger.py chat-op --ledger ledger.json --base-hash
      <hash> --op-id <op> --state sent|confirmed|unknown|failed [--destination-id … --read-back '…'] --out
      outbox`, then deliver and run it the same way;
