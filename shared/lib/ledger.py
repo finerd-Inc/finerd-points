@@ -208,6 +208,10 @@ def cmd_current(a):
 
 
 def cmd_export(a):
+    if a.archive:
+        _need_folder(a, "an archive export")
+        out({"archive": st.export_archive(a.folder, a.archive)})
+        return
     out({"written": fl.export_csv(_read(a)[0], a.out)})
 
 
@@ -329,9 +333,11 @@ def main(argv=None):
     s.add_argument("--field", required=True)
     s.set_defaults(fn=cmd_current)
 
-    s = sub.add_parser("export")
+    s = sub.add_parser("export", help="CSV per collection (--out), or one portable archive (--archive)")
     where(s)
-    s.add_argument("--out", required=True)
+    g2 = s.add_mutually_exclusive_group(required=True)
+    g2.add_argument("--out", help="a folder for one CSV per collection")
+    g2.add_argument("--archive", help="a .zip with the ledger, its backups list and journal")
     s.set_defaults(fn=cmd_export)
 
     s = sub.add_parser("redact", help="a household member's privacy withdrawal")

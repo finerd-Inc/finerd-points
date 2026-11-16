@@ -462,3 +462,20 @@ class HouseholdRemoval(unittest.TestCase):
             with self.assertRaises(fl.LedgerError):  # an old batch can never bring her data back
                 fl.preview_batch(led, [{"op": "add_person", "id": "anna", "name": "Anna",
                                         "consent": {"given": True, "on": "2026-11-17"}}])
+
+
+class Export(unittest.TestCase):
+
+    def test_archive(self):
+        import zipfile
+        with Folder() as root:
+            first_ledger(root)
+            led, bh, bv = st.read(root)
+            st.publish(root, led, bh, bv)
+            path = st.export_archive(root, root / "reports" / "ledger.zip")
+            names = zipfile.ZipFile(path).namelist()
+            self.assertIn("finerd-points/ledger.json", names)
+            self.assertIn("finerd-points/backups.json", names)
+            self.assertEqual(sum(n.startswith("finerd-points/journal/") for n in names), 2)
+            with self.assertRaises(st.StoreError):
+                st.export_archive(root, root / "ledger-copy.zip")

@@ -389,6 +389,33 @@ def scrub_pending_redactions(folder, writer="claude-code"):
     return changed
 
 
+# ---------------------------------------------------------------- export
+
+def export_archive(folder, out_path):
+    """One portable archive: the ledger, the list of its backups and the journal entries (spec v2, appendix D).
+    Working files and locks are left out. Returns the archive path."""
+    import zipfile
+    root = _root(folder)
+    led, bh, bv = read(folder)
+    if led is None:
+        raise StoreError("There is no ledger in this folder yet.")
+    out = Path(out_path).expanduser().resolve()
+    if out == root or root in out.parents and out.parent.name not in ("reports",):
+        raise StoreError("Write the archive outside the ledger folder, or into its reports/ folder.")
+    backups = [{"file": b.name, "sha256": file_sha(b), "bytes": b.stat().st_size}
+               for b in sorted((root / "backups").glob("ledger.v*.json"))]
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("finerd-points/ledger.json", (root / "ledger.json").read_bytes())
+        z.writestr("finerd-points/backups.json", json.dumps(backups, indent=1) + "\n")
+        for j in sorted((root / "journal").glob("*.json")):
+            if not j.name.endswith(".batch.json"):
+                z.writestr(f"finerd-points/journal/{j.name}", j.read_bytes())
+        z.writestr("finerd-points/README.txt",
+                   f"finerd points ledger {led['ledger_id']}, version {bv}, sha256 {bh}.\n"
+                   f"Restore: create an empty folder, run `ledger.py setup --folder <it> --import-file ledger.json`.\n")
+    return str(out)
+
+
 # ---------------------------------------------------------------- housekeeping (Claude Code / Cowork only)
 
 def cleanup(folder, now=None, keep_days=30):

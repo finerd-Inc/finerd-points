@@ -76,8 +76,9 @@ All shapes are in `references/record-shapes.md` (unknown fields are refused).
 - Two rows the report shows as «possibly the same»: ask the person, then
   `{"op":"resolve_link","link":"lnk-…","decision":"same|different"}`; a row «no longer shown»:
   `{"op":"resolve_not_shown","record":"rec-…","decision":"gone|keep"}`.
-- Export: `ledger.py export --folder <folder> --out <folder>/export` writes one CSV per collection
-  (formula-safe).
+- Export: `ledger.py export --folder <folder> --archive <folder>/reports/ledger-<date>.zip` writes one
+  portable archive (the ledger, its backups list and journal); `--out <path>` instead writes one CSV per
+  collection (formula-safe) for a spreadsheet.
 - A ledger file from finerd points 0.1: `ledger.py setup --folder <folder> --import-file <file>` moves it
   into the folder (schema 2; the old file is left as it was).
 
