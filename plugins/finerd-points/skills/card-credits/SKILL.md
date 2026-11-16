@@ -27,7 +27,7 @@ The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); scripts
 1. Load the ledger (`scripts/ledger.py show --folder <folder>`). The issuer's benefits page (Amex
    benefits tracker, Chase, Citi…) is read by `collect`; its «$X used» enters as issuer-reported usage
    for the period, never added on top of credit transactions. For each card with a `finance_link`, fetch from the
-   connector per `references/connectors/<app>.md`: the year's statement credits, annual fees, and
+   connector per `references/apps/<app>/APP.md` (a CSV: `references/connectors/csv.md`): the year's statement credits, annual fees, and
    the oldest transaction date (coverage). Save every tool result to a file exactly as returned.
 2. Normalize: `python3 scripts/normalize.py finerd --account-name "<name>" --account-id <id>
    --from <YYYY-01-01> --to <today> --covered-from <oldest date> raw1.json raw2.json > card.txns.json`,

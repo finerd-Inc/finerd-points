@@ -257,3 +257,18 @@ class Intake(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NonCash(unittest.TestCase):
+
+    def test_own_entries_read_back_as_noncash(self):
+        import normalize
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d, "x.csv")
+            p.write_text("Date,Description,Amount\n2026-05-01,Park Hyatt [finerd points op-0a1b2c3d] non-cash,-900\n"
+                         "2026-05-02,Coffee,-5\n")
+            out = normalize.from_csv(str(p), "Card", "Date", "Description", "Amount", "debit", "2026-01-01",
+                                     "2026-12-31")
+            kinds = {t["description"][:9]: t["kind"] for t in out["transactions"]}
+            self.assertEqual(kinds, {"Park Hyat": "noncash", "Coffee": "purchase"})

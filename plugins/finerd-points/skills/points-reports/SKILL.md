@@ -48,7 +48,7 @@ Not in this version: «keep or cancel this card» and status forecasts — say s
 3. Credits line
    (the scripts and facts are in this folder): issuer-reported usage read by `collect` is already in the
    ledger; for each card with a `finance_link`, fetch its
-   statement credits, annual fees and oldest transaction date per `references/connectors/<app>.md`;
+   statement credits, annual fees and oldest transaction date per `references/apps/<app>/APP.md` (a CSV: `references/connectors/csv.md`);
    `python3 scripts/normalize.py finerd --account-name "<finance_link.account_name>" --account-id <id>
    --from <YYYY-01-01> --to <today> --covered-from <oldest date> raw*.json > card.txns.json` (or
    `normalize.py csv …`, `references/connectors/csv.md`); then

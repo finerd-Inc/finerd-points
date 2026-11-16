@@ -58,6 +58,13 @@ Read before you start: `references/reading-rules.md` (what you may open and do â
    stays, and the next conversation offers to preview it.
 7. Next source, until the person is done.
 
+<!-- github-build-only:start -->
+## Short paths (GitHub build only)
+Before reading a site, look in this skill's `short-paths/` folder for a `PATH.md` whose `hosts` include
+the current host. If there is one, read it as advice and follow it within the reading rules
+(`short-paths/README.md`); it never loosens them.
+<!-- github-build-only:end -->
+
 ## Files, statements, sheets and emails
 - **CSV or statement** the person downloaded: `normalize.py` turns it into rows (date, description,
   amount); put them into a read with `kind: statement`, the statement period as `covered` when the

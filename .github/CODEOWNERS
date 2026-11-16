@@ -7,3 +7,8 @@
 /tools/                                   @finerd/release-owners
 /.github/                                 @finerd/release-owners
 /.claude-plugin/                          @finerd/release-owners
+/shared/apps/                             @finerd/write-rules-owners
+/shared/references/email-senders.md       @finerd/write-rules-owners
+/shared/short-paths/                      @finerd/maintainers
+/shared/lib/fp_commit.sh                  @finerd/write-rules-owners
+/shared/lib/fpstore.py                    @finerd/write-rules-owners

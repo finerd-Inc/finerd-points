@@ -16,7 +16,7 @@ Say this in your own words, in a few sentences, before the first read, then reco
 - **Where it is kept:** in your ledger, a file in one folder on your computer (default
   `~/finerd points`). finerd points has no server and sends your data nowhere.
 - **Who sees it:** your AI provider (it runs this conversation and processes the pages it reads),
-  your browser and the sites you open, and any app you connect (finerd, Monarch, Google Calendar…).
+  your browser and the sites you open, and any app you connect (a finance app, Google Calendar…).
 - **Sites' own rules:** following each site's terms is between you, your AI platform and the site.
   Some banks restrict AI tools signing in on your behalf; you can always download a statement or
   CSV yourself and give me that instead.

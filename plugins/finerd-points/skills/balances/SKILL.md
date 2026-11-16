@@ -22,7 +22,7 @@ The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); scripts
 ## Steps
 1. Show what the ledger knows: `python3 scripts/balances.py --ledger <folder>/ledger.json --format md`.
    To read a program's site now, hand over to `collect`.
-2. To refresh from finerd: per `references/connectors/finerd.md`, read each REWARD account's
+2. To refresh from finerd: per `references/apps/finerd/APP.md`, read each REWARD account's
    latest verified balance (and the computed balance), write a `finerd-points/balances@1` file
    (one entry per program: `account_id`, `program`, `amount`, `unit`, `as_of`, `kind`), then
    `balances.py --ledger <folder>/ledger.json --input bal.json --proposals bal-batch.json`. For other sources
