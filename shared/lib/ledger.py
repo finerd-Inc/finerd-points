@@ -104,10 +104,11 @@ def cmd_open(a):
     reinstalled = st.install_script(root) if a.reinstall else False
     chk = st.check(root)
     removed = st.cleanup(root) if a.cleanup else []
+    scrubbed = st.scrub_pending_redactions(root) if a.cleanup else []
     led, bh, bv = st.read(root)
     res = {"version": bv, "hash": bh,
            "check": {k: chk.get(k) for k in ("result", "chain", "recovered", "problems", "notes")},
-           "cleaned_up": len(removed), "script_reinstalled": reinstalled}
+           "cleaned_up": len(removed), "older_copies_scrubbed": len(scrubbed), "script_reinstalled": reinstalled}
     if led is not None:
         res["summary"] = fl.summary(led)
         res["forbidden"] = fl.forbidden_report(led)

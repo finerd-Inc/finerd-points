@@ -308,6 +308,87 @@ def apply_and_publish(folder, batch, confirm_hash, writer="claude-code", session
     return res
 
 
+# ---------------------------------------------------------------- household redaction of older copies
+
+REMOVED = "(removed at a household member's request)"
+
+
+def _rewrite_json(path, fn):
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    new = fn(data)
+    if new is None:
+        return False
+    tmp = path.with_name(f".{path.name}.{secrets.token_hex(4)}")
+    tmp.write_text(json.dumps(new, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+    return True
+
+
+def scrub_person(folder, person_id, led_now):
+    """Remove a household member's data from every older copy in the folder: backups, candidates, working
+    reads, batches and saved previews. Claude Code or Cowork run it (a chat cannot rewrite these files);
+    `open --cleanup` runs it for every redaction not yet applied to the files. Returns the files changed."""
+    root = _root(folder)
+    gone_accounts = set()
+    for path in sorted((root / "backups").glob("*.json")) + sorted((root / "work").glob("cand-*.json")):
+        def scrub_ledger(led):
+            if not isinstance(led, dict) or "people" not in led:
+                return None
+            gone_accounts.update(f"{s_['id']}/{a['id']}" for s_ in led.get("sources", []) for a in s_["accounts"]
+                                 if a.get("person") == person_id)
+            fl.apply_redaction(led, person_id)
+            return led
+        _rewrite_json(path, scrub_ledger)
+    gone_accounts.update(f"{s_['id']}/{a['id']}" for s_ in led_now.get("sources", []) for a in s_["accounts"]
+                         if a.get("person") == person_id)
+    changed = []
+
+    def mentions(op):
+        if not isinstance(op, dict):
+            return False
+        if person_id in fl._persons_named(op) or (op.get("op") == "add_person" and op.get("id") == person_id):
+            return True
+        return f"{op.get('source')}/{op.get('account')}" in gone_accounts
+
+    for path in sorted((root / "journal").glob("*.batch.json")) + sorted((root / "work").glob("*.batch.json")) + \
+            sorted((root / "work").glob("batch-*.json")):
+        if _rewrite_json(path, lambda b: [op for op in b if not mentions(op)] if isinstance(b, list) else None):
+            changed.append(str(path.relative_to(root)))
+    for path in sorted((root / "work").glob("read-*.json")):
+        def scrub_reads(r):
+            reads = r if isinstance(r, list) else [r]
+            keep = [x for x in reads if isinstance(x, dict) and not mentions(x)
+                    and not mentions(x.get("source_op") or {})]
+            return keep if isinstance(r, list) else (keep[0] if keep else {"removed": REMOVED})
+        if _rewrite_json(path, scrub_reads):
+            changed.append(str(path.relative_to(root)))
+    for path in sorted((root / "work").glob("preview-*.json")):
+        if _rewrite_json(path, lambda p: {**p, "text": REMOVED} if isinstance(p, dict) else None):
+            changed.append(str(path.relative_to(root)))
+    return changed
+
+
+def scrub_pending_redactions(folder, writer="claude-code"):
+    """Apply every redaction not yet applied to the folder's older copies, then record that it was."""
+    led, bh, bv = read(folder)
+    if led is None:
+        return []
+    todo = [r for r in led["_meta"].get("redactions", []) if r.get("person") and not r.get("files_scrubbed")]
+    if not todo:
+        return []
+    changed = []
+    for r in todo:
+        changed += scrub_person(folder, r["person"], led)
+        r["files_scrubbed"] = True
+    res = publish(folder, led, bh, bv, writer, "older copies scrubbed after a household member's removal")
+    if res.get("result") != "committed":
+        raise StoreError(f"The older copies were scrubbed but the ledger could not record it: {res.get('reason')}")
+    return changed
+
+
 # ---------------------------------------------------------------- housekeeping (Claude Code / Cowork only)
 
 def cleanup(folder, now=None, keep_days=30):

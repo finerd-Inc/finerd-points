@@ -37,6 +37,8 @@ PLAN = {
                                    "balances.py", "spend.py", "render_report.py"] + STORE,
                        "facts": True, "refs": True, "extra_refs": ["year-in-review-formula.md"],
                        "assets": True},
+    "collect":        {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py"] + STORE,
+                       "facts": True, "refs": True},
     "facts-check":    {"scripts": ["fpfacts.py"], "tools": ["check_facts.py"], "facts": True, "refs": False},
 }
 # Connector guides per build. The Claude directory build names only Google, finerd (the publisher's

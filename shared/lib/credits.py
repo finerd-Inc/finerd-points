@@ -403,7 +403,13 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                         contribs.append({"id": o["source"].get("ref") or o["id"], "date": o["as_of"],
                                          "amount": -float(o["value"]), "reverses": o["source"].get("reverses")})
                     ids.append(o["source"].get("ref") or o["id"])
-                said = fl.current(led, subj, "used_amount", obs)  # the person's own word, or a correction
+                # The issuer's own benefits page («$X used this period») is issuer-reported usage: it sets used and
+                # remaining for the period and is never added on top of credit transactions (spec v2, appendix C).
+                issuer = sorted((o for o in obs if o["subject"] == subj and o["field"] == "used_amount"
+                                 and o["source"].get("kind") == "issuer_page"), key=lambda o: o["as_of"])
+                issuer = issuer[-1] if issuer else None
+                said = fl.current(led, subj, "used_amount",
+                                  [o for o in obs if o["source"].get("kind") != "issuer_page"])  # the person's word
                 if said is not None:
                     unit = next((o.get("unit") for o in obs if o["id"] == said["observation"]), None)
                     if unit and unit != report_cur:
@@ -415,6 +421,25 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                 net, by_year, over = recognize(contribs, cap)
                 is_current = p_start <= today <= p_end and not event_like
                 prior = p_end < ys
+                issuer_used = None
+                if issuer is not None and said is None and (issuer.get("unit") or report_cur) == report_cur:
+                    iv = min(float(issuer["value"]), cap)
+                    if iv <= EPS and issuer.get("caveat") == "may_lag" and net <= EPS:
+                        issuer_used = "lagging"  # «$0 received» from a tracker that warns it may lag: unknown
+                        notes.append(f"the issuer's tracker showed $0 on {issuer['as_of']} and says it may lag")
+                    else:
+                        issuer_used = iv
+                        if contribs and abs(net - iv) > EPS:
+                            notes.append(f"the issuer's page shows {iv:.2f} used on {issuer['as_of']}, the transactions "
+                                         f"show {net:.2f}")
+                        elif not contribs:
+                            notes.append(f"issuer-reported on {issuer['as_of']}")
+                        tx_net = net
+                        net = iv
+                        by_year = {str(p_start.year): iv}  # the benefit period's year, not the read date's
+                        contribs = contribs if contribs else [{"id": f"issuer:{issuer['id']}", "date": issuer["as_of"],
+                                                               "amount": iv}]
+                        confidence = "issuer-reported"
                 if said is not None:
                     net = min(float(said["value"]), cap)
                     if float(said["value"]) > cap + EPS:
@@ -426,7 +451,11 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                 elif over > EPS:
                     notes.append(f"{over:.2f} matched above the {allowance:.2f} allowance and is not counted; "
                                  f"check the matching")
-                if not visible and said is None and net <= EPS:
+                if issuer_used == "lagging":
+                    status, confidence = "unknown", "unknown"
+                elif isinstance(issuer_used, float) and ids and abs(tx_net - issuer_used) > EPS:
+                    status, confidence = "conflicting", "conflicting"
+                elif not visible and said is None and net <= EPS and issuer_used is None:
                     status, confidence = "ask", "unknown"
                 elif event_like:
                     status = "used" if net > EPS else "available (not periodic)"
@@ -462,6 +491,8 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                     status, confidence = "unknown", "unsure"
                 if status in ("ask", "unknown") or event_like:
                     remaining = None
+                elif status == "conflicting":
+                    remaining = round(max(allowance - net, 0.0), 2)
                 else:
                     remaining = round(max(allowance - net, 0.0), 2)
                 if status == "ask":
@@ -477,6 +508,9 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                     "used_by_year": by_year, "contribs": contribs if status != "ask" else [],
                     "status": status, "confidence": confidence, "coverage": cov, "transactions": ids,
                     "notes": notes,
+                    "issuer_reported": (None if not isinstance(issuer_used, float) else
+                                        {"used": issuer_used, "as_of": issuer["as_of"],
+                                         "transactions_used": round(tx_net, 2) if ids else None}),
                 })
                 if status == "ask" and is_current and not gated:
                     questions.append(f"Have you used this period's {b['name']} on your {card['nickname']} "

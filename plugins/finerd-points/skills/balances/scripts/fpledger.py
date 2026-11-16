@@ -594,7 +594,8 @@ ALLOWED = {
                  "source", "redemption", "fx_rate", "fx_source", "note"},
     "add_certificate": {"id", "account", "type", "issued_on", "expires_on", "value_cap", "source", "note"},
     "add_signup_offer": {"id", "card", "bonus", "spend", "deadline", "start_date", "source", "note"},
-    "observe": {"subject", "field", "value", "source", "as_of", "confidence", "method", "note", "unit", "person"},
+    "observe": {"subject", "field", "value", "source", "as_of", "confidence", "method", "note", "unit", "person",
+                "caveat"},
     "void": {"target", "reason", "by"},
     "set_setting": {"key", "value"},
     "set_setup": {"key", "value"},
@@ -666,8 +667,27 @@ def register_op(name, required, allowed, check, apply, describe):
     EXTRA_OPS[name] = {"check": check, "apply": apply, "describe": describe}
 
 
+def _persons_named(obj):
+    out = set()
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "person" and isinstance(v, str):
+                out.add(v)
+            out |= _persons_named(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            out |= _persons_named(v)
+    return out
+
+
 def _check_op(led, op, i, staged_ids):
     kind = op.get("op") if isinstance(op, dict) else None
+    removed = {r.get("person") for r in led["_meta"].get("redactions", []) if r.get("person")}
+    if removed and isinstance(op, dict):
+        named = _persons_named(op) | ({op.get("id")} if kind == "add_person" else set())
+        if named & removed:
+            raise LedgerError(f"Step {i + 1}: this change names a household member whose data was removed at their "
+                              f"request; it cannot bring that data back.")
     if kind in EXTRA_OPS:
         missing = [k for k in REQUIRED[kind] if op.get(k) in (None, "")]
         if missing:
@@ -727,6 +747,8 @@ def _check_op(led, op, i, staged_ids):
             raise LedgerError(f"Step {i + 1}: {op['field']} values are dates, YYYY-MM-DD.")
         if op["field"] in ("balance", "credited", "used_amount") and not _num(op["value"]):
             raise LedgerError(f"Step {i + 1}: {op['field']} must be a number of 0 or more.")
+        if op.get("caveat") not in (None, "may_lag"):
+            raise LedgerError(f"Step {i + 1}: caveat is may_lag (the issuer's tracker says it may lag) or absent.")
     elif kind == "void":
         if not any(o["id"] == op["target"] for o in led["observations"]):
             raise LedgerError(f"Step {i + 1}: observation {op['target']} not found.")
@@ -912,7 +934,7 @@ def apply_batch(led, batch, confirm_hash, session=None, now=None):
             results.append({"op": k, "id": rec["id"]})
         elif k == "observe":
             rec = {key: op[key] for key in ("subject", "field", "value", "source", "as_of", "confidence")}
-            for opt in ("method", "note", "unit", "person"):
+            for opt in ("method", "note", "unit", "person", "caveat"):
                 if op.get(opt) is not None:
                     rec[opt] = op[opt]
             rec["id"] = new_id("obs")
@@ -1143,6 +1165,18 @@ def redaction_plan(led, person_id):
                         if owned(x.get("subject")) or any(owned(m) for m in (x["payload"].get("members") or []))
                         or any(n and n in canonical(x) for n in names)),
     }
+    # schema 2: what was collected from sites for this person
+    src_accounts = sorted(f"{s_['id']}/{a['id']}" for s_ in led.get("sources", []) for a in s_["accounts"]
+                          if a.get("person") == person_id)
+    owned_acc = set(src_accounts)
+    recs = sorted(r["id"] for r in led.get("records", []) if f"{r['source']}/{r['account']}" in owned_acc)
+    rset = set(recs)
+    plan.update({
+        "inventory": sorted(x["id"] for x in led.get("inventory", []) if x.get("person") == person_id),
+        "source_accounts": src_accounts,
+        "records": recs,
+        "events": sorted(e["id"] for e in led.get("events", []) if set(e.get("records", [])) & rset),
+    })
     text = [f"Removing {person_id}'s data from the current ledger:"]
     for k, v in plan.items():
         if v and k not in ("calendar_events", "oplog", "_names"):
@@ -1165,26 +1199,7 @@ def redact_person(led, person_id, confirm_hash, session=None, now=None):
     h, plan, _ = redaction_plan(led, person_id)
     if h != confirm_hash:
         raise LedgerError("This is not the removal the person saw (hash mismatch). Show the plan again.")
-    for coll in ("people", "cards", "accounts", "observations", "redemptions", "costs", "certificates", "signup_offers"):
-        drop = set(plan[coll])
-        led[coll] = [r for r in led[coll] if r["id"] not in drop]
-    dropped_obs = set(plan["observations"])
-    led["corrections"] = [c for c in led["corrections"] if c["target"] not in dropped_obs]
-    names = plan.get("_names", [])
-    for coll in COLLECTIONS:
-        for rec in led[coll]:
-            for a in rec.get("amendments", []) if isinstance(rec, dict) else []:
-                text = canonical([a.get("old"), a.get("new"), a.get("reason")])
-                if person_id in (a.get("old"), a.get("new")) or any(n and n in text for n in names):
-                    a["old"] = a["new"] = "(removed at a household member's request)"
-                    a["reason"] = "(removed)"
-    for x in led["oplog"]:
-        if x["op_id"] in plan["oplog"]:
-            x["summary"] = "(removed at a household member's request)"
-            x["payload"] = {"redacted": True}
-            x.pop("read_back", None)
-            x.pop("error", None)
-            x["subject"] = None
+    apply_redaction(led, person_id, plan)
     ts = iso(now or now_utc())
     ops = []
     for ev in led["calendar_events"]:
@@ -1199,8 +1214,59 @@ def redact_person(led, person_id, confirm_hash, session=None, now=None):
             ev["members"] = []
             ev["title"] = "finerd points (removed)"
             ev["description"] = ""
-    led["_meta"]["redactions"].append({"at": ts, "counts": {k: len(v) for k, v in plan.items() if k != "_names"}})
+    led["_meta"]["redactions"].append({"at": ts, "person": person_id, "files_scrubbed": False,
+                                       "counts": {k: len(v) for k, v in plan.items() if k != "_names"}})
     return ops
+
+
+def apply_redaction(led, person_id, plan=None):
+    """Remove a household member's data from a ledger (the current one, a backup or a candidate). The
+    person's confirmation is checked by redact_person for the current ledger; older copies in the
+    ledger folder are scrubbed with the same plan by fpstore.scrub_person."""
+    if plan is None:
+        if not any(p["id"] == person_id for p in led["people"]):
+            plan = {k: [] for k in ("people", "cards", "accounts", "observations", "redemptions", "costs",
+                                    "certificates", "signup_offers", "calendar_events", "oplog", "inventory",
+                                    "source_accounts", "records", "events")}
+            plan["_names"] = []
+            src = {f"{s_['id']}/{a['id']}" for s_ in led.get("sources", []) for a in s_["accounts"]
+                   if a.get("person") == person_id}
+            plan["source_accounts"] = sorted(src)
+            plan["records"] = [r["id"] for r in led.get("records", []) if f"{r['source']}/{r['account']}" in src]
+            plan["inventory"] = [x["id"] for x in led.get("inventory", []) if x.get("person") == person_id]
+        else:
+            _, plan, _ = redaction_plan(led, person_id)
+    for coll in ("people", "cards", "accounts", "observations", "redemptions", "costs", "certificates", "signup_offers",
+                 "inventory", "records", "events"):
+        drop = set(plan.get(coll, []))
+        if coll in led:
+            led[coll] = [r for r in led[coll] if r["id"] not in drop]
+    gone = set(plan.get("source_accounts", []))
+    keep_sources = []
+    for s_ in led.get("sources", []):
+        s_["accounts"] = [a for a in s_["accounts"] if f"{s_['id']}/{a['id']}" not in gone]
+        s_["coverage"] = [c for c in s_.get("coverage", []) if f"{s_['id']}/{c['account']}" not in gone]
+        if s_["accounts"]:
+            keep_sources.append(s_)
+    if "sources" in led:
+        led["sources"] = keep_sources
+    dropped_obs = set(plan["observations"])
+    led["corrections"] = [c for c in led.get("corrections", []) if c["target"] not in dropped_obs]
+    names = plan.get("_names", [])
+    for coll in COLLECTIONS:
+        for rec in led.get(coll, []):
+            for a in rec.get("amendments", []) if isinstance(rec, dict) else []:
+                text = canonical([a.get("old"), a.get("new"), a.get("reason")])
+                if person_id in (a.get("old"), a.get("new")) or any(n and n in text for n in names):
+                    a["old"] = a["new"] = "(removed at a household member's request)"
+                    a["reason"] = "(removed)"
+    for x in led["oplog"]:
+        if x["op_id"] in plan["oplog"]:
+            x["summary"] = "(removed at a household member's request)"
+            x["payload"] = {"redacted": True}
+            x.pop("read_back", None)
+            x.pop("error", None)
+            x["subject"] = None
 
 
 # ---------------------------------------------------------------- export

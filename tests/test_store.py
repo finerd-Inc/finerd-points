@@ -420,3 +420,45 @@ class ChatPath(unittest.TestCase):
             fl.apply_batch(led, card("local"), fl.preview_batch(led, card("local"))[0])
             res = st.publish(root, led, lbh, lbv)
             self.assertEqual((res["result"], res["code"]), ("refused", "10"))
+
+
+class HouseholdRemoval(unittest.TestCase):
+
+    def test_member_removed_everywhere_and_never_replayed(self):
+        import fpcollect as fc
+        with Folder() as root:
+            first_ledger(root)
+            add = [{"op": "add_person", "id": "anna", "name": "Anna", "consent": {"given": True, "on": "2026-11-16"}},
+                   {"op": "add_source", "id": "aw", "kind": "aggregator", "name": "AwardWallet",
+                    "accounts": [{"id": "anna-hy", "label": "Anna Hyatt", "person": "anna"},
+                                 {"id": "me-hy", "label": "My Hyatt", "person": "me"}]}]
+            h, _ = st.preview(root, add)
+            self.assertEqual(st.apply_and_publish(root, add, h)["result"], "committed")
+            led, _, _ = st.read(root)
+            rd = {"source": "aw", "account": "anna-hy", "section": "activity", "read_id": "r1",
+                  "requested": ["2026-01-01", "2026-11-16"], "covered": None, "state": "partial",
+                  "read_at": "2026-11-16T00:00:00Z", "unit": "points",
+                  "rows": [{"date": "2026-05-01", "amount": 777, "description": "Anna stay", "status": "posted"}]}
+            batch, _ = fc.plan_read(led, rd)
+            h, _ = st.preview(root, batch)
+            self.assertEqual(st.apply_and_publish(root, batch, h)["result"], "committed")
+            (root / "work" / "batch-old.json").write_text(json.dumps(batch))
+            led, _, _ = st.read(root)
+            hh, plan, text = fl.redaction_plan(led, "anna")
+            self.assertEqual(plan["records"], [led["records"][0]["id"]])
+            for _ in range(2):  # the publish helper retries once if needed
+                led, bh, bv = st.read(root)
+                fl.redact_person(led, "anna", hh)
+                if st.publish(root, led, bh, bv)["result"] == "committed":
+                    break
+            changed = st.scrub_pending_redactions(root)
+            self.assertIn("work/batch-old.json", changed)
+            for p in list((root / "backups").glob("*.json")) + list((root / "journal").glob("*.batch.json")):
+                self.assertNotIn("Anna", p.read_text(), p.name)
+            led, _, _ = st.read(root)
+            self.assertEqual(led["records"], [])
+            self.assertEqual([a["id"] for a in led["sources"][0]["accounts"]], ["me-hy"])
+            self.assertTrue(led["_meta"]["redactions"][-1]["files_scrubbed"])
+            with self.assertRaises(fl.LedgerError):  # an old batch can never bring her data back
+                fl.preview_batch(led, [{"op": "add_person", "id": "anna", "name": "Anna",
+                                        "consent": {"given": True, "on": "2026-11-17"}}])
