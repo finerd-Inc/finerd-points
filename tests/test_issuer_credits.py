@@ -110,3 +110,29 @@ class FactDates(unittest.TestCase):
         self.assertIn(("cards/bofa-atmos-summit.json", "travel-delay-credit", "2026-11-02",
                        "no issuer or program page confirms it yet"), items)
         self.assertGreater(len(ff.stale_facts(self.catalog, dt.date(2027, 3, 1))), len(items))
+
+
+class ReviewRound1Credits(unittest.TestCase):
+    catalog = ff.load_catalog(ROOT / "shared" / "facts")
+
+    def test_issuer_zero_without_caveat_is_authoritative(self):
+        led = ledger(issuer("benefit:gold/dining-credit/2026-11", 0))
+        p = period(credits.analyze(led, self.catalog, {}, [], TODAY, 2026), "dining-credit", "2026-11")
+        self.assertEqual((p["status"], p["remaining"]), ("not used yet", 10.0))
+
+    def test_card_outside_the_catalog_tracked_from_the_issuer_page(self):
+        led = fl.new_ledger("T", storage="folder")
+        b = [{"op": "add_card", "id": "local", "person": "me", "nickname": "Local Bank Card"},
+             {"op": "observe", "subject": "benefit:local/travel-credit/2026", "field": "used_amount", "value": 120,
+              "source": {"kind": "issuer_page"}, "as_of": "2026-11-16", "confidence": "confirmed",
+              "note": "Travel credit"},
+             {"op": "observe", "subject": "benefit:local/travel-credit/2026", "field": "allowance", "value": 300,
+              "source": {"kind": "issuer_page"}, "as_of": "2026-11-16", "confidence": "confirmed"},
+             {"op": "observe", "subject": "benefit:local/travel-credit/2026", "field": "period_end",
+              "value": "2026-12-31", "source": {"kind": "issuer_page"}, "as_of": "2026-11-16",
+              "confidence": "confirmed"}]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        res = credits.analyze(led, self.catalog, {}, [], TODAY, 2026)
+        p = res["cards"][0]["benefits"][0]["periods"][0]
+        self.assertEqual((p["status"], p["used"], p["remaining"], p["end"]), ("partly used", 120.0, 180.0, "2026-12-31"))
+        credits.to_markdown(res)  # renders

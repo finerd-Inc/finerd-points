@@ -187,7 +187,14 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
             questions.append(f"For your {card['nickname']}, open the issuer's benefits page so I can read which credits "
                              f"you used, give me its statement or CSV, or tell me which credits you used.")
         if not cf:
-            entry["note"] = "This card is not in the facts catalog yet; credits cannot be tracked."
+            ib = issuer_only_benefits(card, obs, today, year, report_cur)
+            if ib:
+                entry["benefits"] = ib
+                entry["note_soft"] = ("Not in the facts catalog yet: credits as the issuer's own page showed them; "
+                                      "no expected credits or deadlines by rule.")
+            else:
+                entry["note"] = ("This card is not in the facts catalog yet: open the issuer's benefits page so I "
+                                 "can read its credits, or tell me which ones you have.")
             result_cards.append(entry)
             continue
         if (cf.get("currency") or report_cur) != report_cur:
@@ -456,6 +463,8 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                     status, confidence = "unknown", "unknown"
                 elif isinstance(issuer_used, float) and ids and abs(tx_net - issuer_used) > EPS:
                     status, confidence = "conflicting", "conflicting"
+                elif isinstance(issuer_used, float) and net <= EPS and not event_like:
+                    status, confidence = ("not used yet" if is_current else "no credit posted"), "issuer-reported"
                 elif not visible and said is None and net <= EPS and issuer_used is None:
                     status, confidence = "ask", "unknown"
                 elif event_like:
@@ -538,10 +547,18 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
         first_card, first = items[0]
         first["pooled_used"] = {c: other["year_to_date"]["used"] for c, other in items}
         for p in first["periods"]:
-            combined = [dict(c_, id=f"{card_id}:{c_['id']}",
-                             reverses=(f"{card_id}:{c_['reverses']}" if c_.get("reverses") else None))
-                        for card_id, other in items for op_ in other["periods"] if op_["key"] == p["key"]
-                        for c_ in (op_.get("contribs") or [])]
+            combined = []
+            for card_id, other in items:
+                for op_ in other["periods"]:
+                    if op_["key"] != p["key"]:
+                        continue
+                    if op_.get("issuer_reported"):  # authoritative for that card's share of the period
+                        combined.append({"id": f"{card_id}:issuer", "date": op_["end"],
+                                         "amount": op_["issuer_reported"]["used"]})
+                        continue
+                    combined += [dict(c_, id=f"{card_id}:{c_['id']}",
+                                      reverses=(f"{card_id}:{c_['reverses']}" if c_.get("reverses") else None))
+                                 for c_ in (op_.get("contribs") or [])]
             pooled, pby, _ = recognize(combined, p["allowance"])  # one cap for the whole shared period
             p["used_by_year"] = pby
             if pooled > EPS:
@@ -571,6 +588,66 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                                "pending": bool(t.get("pending"))} for t in unmatched],
         "questions": questions, "proposed_batch": proposals,
     }
+
+
+def issuer_only_benefits(card, obs, today, year, report_cur):
+    """Credits of a card outside the catalog, built only from what the issuer's page showed:
+    observations on benefit:<card>/<benefit>/<period key> with used_amount, and when shown allowance and
+    period_end (spec v2: cards outside the catalog are tracked when the page shows their credits)."""
+    groups = {}
+    for o in obs:
+        if o["source"].get("kind") != "issuer_page" or not o["subject"].startswith(f"benefit:{card['id']}/"):
+            continue
+        parts = o["subject"].split("/")
+        if len(parts) != 3 or o["field"] not in ("used_amount", "allowance", "period_end"):
+            continue
+        if o["field"] != "period_end" and (o.get("unit") or report_cur) != report_cur:
+            continue
+        g = groups.setdefault((parts[1], parts[2]), {})
+        if o["field"] not in g or o["as_of"] >= g[o["field"]]["as_of"]:
+            g[o["field"]] = o
+    out = {}
+    for (bid, key), g in sorted(groups.items()):
+        if "used_amount" not in g:
+            continue
+        used = float(g["used_amount"]["value"])
+        allowance = float(g["allowance"]["value"]) if "allowance" in g else None
+        end = g["period_end"]["value"] if "period_end" in g and fl.is_date(g["period_end"]["value"]) else None
+        lag = g["used_amount"].get("caveat") == "may_lag" and used <= EPS
+        current = end is not None and today.isoformat() <= end
+        if lag:
+            status = "unknown"
+        elif allowance is not None and used >= allowance - EPS:
+            status = "used"
+        elif used > EPS:
+            status = "partly used"
+        else:
+            status = "not used yet" if current else ("no credit posted" if end else "unknown")
+        remaining = None if (lag or allowance is None) else round(max(allowance - used, 0.0), 2)
+        p = {"key": key, "start": None, "end": end or "—", "current": current, "in_year": True, "prior": False,
+             "allowance": allowance or 0.0, "credited": 0.0, "pending": 0.0, "reversed": 0.0,
+             "used": None if lag else used, "remaining": remaining,
+             "used_by_year": {} if lag else {str(year): used}, "contribs": [], "status": status,
+             "confidence": "issuer-reported", "coverage": "issuer page", "transactions": [],
+             "notes": [f"as the issuer's page showed on {g['used_amount']['as_of']}"] +
+                      (["the allowance was not shown"] if allowance is None else []) +
+                      (["the deadline was not shown"] if end is None else []),
+             "issuer_reported": None if lag else {"used": used, "as_of": g["used_amount"]["as_of"],
+                                                  "transactions_used": None}}
+        b = out.setdefault(bid, {"benefit": bid, "name": (g["used_amount"].get("note") or bid)[:60],
+                                 "kind": "statement_credit", "period": "issuer", "retired": False,
+                                 "cap_only": False, "event_like": False, "gated": False, "requires": None,
+                                 "descriptor_verified": False, "evidence": "issuer_page", "enrollment": "unknown",
+                                 "enrolled": None, "shared_group": None, "fact_checked_on": None,
+                                 "fact_state": "not in catalog", "periods": [], "report_year": year,
+                                 "unknown_allowance": allowance is None})
+        b["periods"].append(p)
+    for b in out.values():
+        b["periods"].sort(key=lambda x: x["key"])
+        if b["unknown_allowance"]:
+            b["cap_only"] = True  # without an allowance it cannot count toward «available»
+        _year_to_date(b, year)
+    return list(out.values())
 
 
 def _year_to_date(bent, year=None):
@@ -623,6 +700,8 @@ def to_markdown(res):
         if c.get("note"):
             out.append(c["note"])
             continue
+        if c.get("note_soft"):
+            out.append(f"_{c['note_soft']}_")
         if c.get("coverage_note"):
             out.append(f"_{c['coverage_note']}_")
         if not any(b["current"] or b["periods"] for b in c["benefits"]):

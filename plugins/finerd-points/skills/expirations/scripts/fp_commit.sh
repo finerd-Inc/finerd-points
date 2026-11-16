@@ -67,7 +67,20 @@ trap release 0
 trap 'exit 130' INT TERM HUP
 
 take_stale() { # 0 = a dead owner's lock was parked; the caller retries mkdir
-    [ -f "$LOCK/owner" ] || return 1
+    if [ -d "$GUARD" ] && older_than_2min "$GUARD"; then
+        park "$GUARD" guard-abandoned 2>/dev/null && say "NOTE=released a guard lock left by a crashed commit"
+    fi
+    if [ ! -f "$LOCK/owner" ]; then
+        # a commit that crashed between creating the lock and writing its owner record
+        older_than_2min "$LOCK" || return 1
+        mkdir "$GUARD" 2>/dev/null || return 1
+        took=1
+        if [ -d "$LOCK" ] && [ ! -f "$LOCK/owner" ] && older_than_2min "$LOCK"; then
+            park "$LOCK" ownerless && say "NOTE=released a lock without an owner record" && took=0
+        fi
+        park "$GUARD" guard
+        return $took
+    fi
     snap=$(cat "$LOCK/owner")
     o_host=$(val "$LOCK/owner" host); o_pid=$(val "$LOCK/owner" pid); o_epoch=$(val "$LOCK/owner" epoch)
     is_num "$o_epoch" || o_epoch=0
@@ -101,6 +114,13 @@ acquire() {
     done
 }
 
+has_commit() { # the ledger's commits list carries this operation id (JSON escapes quotes inside strings,
+    # so the pattern can only match a real "commit_id" key, with any whitespace around the colon)
+    grep -Eq "\"commit_id\"[[:space:]]*:[[:space:]]*\"$1\"" "$LEDGER"
+}
+
+older_than_2min() { [ -n "$(find "$1" -prune -mmin +2 2>/dev/null)" ]; }
+
 set_state() { # $1 journal file, $2 new state
     sed "s/^  \"state\": \"[a-z]*\"/  \"state\": \"$2\"/" "$1" > "$1.tmp.$$" && mv "$1.tmp.$$" "$1"
 }
@@ -111,7 +131,7 @@ recover() { # resolve «planned» entries: committed if the ledger carries the o
         case "$j" in *.batch.json) continue;; esac
         [ "$(jval "$j" state)" = planned ] || continue
         jop=$(jval "$j" op_id)
-        if [ -f "$LEDGER" ] && grep -qF "\"commit_id\": \"$jop\"" "$LEDGER"; then
+        if [ -f "$LEDGER" ] && has_commit "$jop"; then
             set_state "$j" committed; say "RECOVERED=$jop committed"
         else
             set_state "$j" abandoned; say "RECOVERED=$jop abandoned"
@@ -138,6 +158,10 @@ check_chain() {
               exit bad }'
 }
 
+for x in "$DIR/ledger.json" "$DIR/work" "$DIR/journal" "$DIR/backups" "$DIR/locks" "$DIR/bin" "$DIR/.lock"; do
+    [ -L "$x" ] && fail 12 "$(basename "$x") in the ledger folder is a symbolic link; refusing to write through it"
+done
+
 cmd=${1:-}
 case "$cmd" in
 check)
@@ -158,6 +182,7 @@ commit)
     is_hex64 "$CH" || fail 12 "bad candidate hash"
     W="$DIR/work/$CAND"
     [ -f "$W" ] && [ -f "$W.meta" ] || fail 12 "candidate or its meta file is missing in work/"
+    { [ -L "$W" ] || [ -L "$W.meta" ] || [ -L "$W.batch.json" ]; } && fail 12 "a candidate file is a symbolic link"
     [ "$(val "$W.meta" protocol)" = "$PROTOCOL" ] || fail 17 "candidate was made for another protocol"
     [ "$(val "$W.meta" op_id)" = "$OP" ] || fail 13 "meta op id differs"
     [ "$(val "$W.meta" version)" = "$((BV + 1))" ] || fail 13 "meta version is not base + 1"
@@ -174,7 +199,7 @@ commit)
         [ -f "$LEDGER" ] || fail 10 "there is no ledger to update"
         cur=$(sha "$LEDGER")
         [ "$cur" = "$BH" ] || fail 10 "BASE_CHANGED current=$cur"
-        grep -qF "\"commit_id\": \"$OP\"" "$LEDGER" && fail 11 "operation already in the ledger"
+        has_commit "$OP" && fail 11 "operation already in the ledger"
     fi
     [ -e "$DIR/journal/$OP.json" ] && fail 11 "operation already in the journal"
     [ "$(sha "$W")" = "$CH" ] || fail 13 "candidate hash differs"
@@ -192,7 +217,9 @@ commit)
     fi
 
     J="$DIR/journal/$OP.json"
-    [ -f "$W.batch.json" ] && cp "$W.batch.json" "$DIR/journal/$OP.batch.json"
+    if [ -f "$W.batch.json" ]; then
+        cp "$W.batch.json" "$DIR/journal/$OP.batch.json.tmp.$$" && mv -f "$DIR/journal/$OP.batch.json.tmp.$$" "$DIR/journal/$OP.batch.json"
+    fi
     printf '{\n  "protocol": %s,\n  "op_id": "%s",\n  "base_version": %s,\n  "base_hash": "%s",\n  "new_version": %s,\n  "new_hash": "%s",\n  "candidate": "work/%s",\n  "at": "%s",\n  "host": "%s",\n  "state": "planned"\n}\n' \
         "$PROTOCOL" "$OP" "$BV" "$BH" "$((BV + 1))" "$CH" "$CAND" "$(stamp)" "$(host)" > "$J.tmp.$$" &&
         mv "$J.tmp.$$" "$J" || fail 16 "could not write the journal entry"

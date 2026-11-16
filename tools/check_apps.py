@@ -57,7 +57,14 @@ def check():
             problems.append(f"{d.name}: app is {h['app']!r}, not the folder name")
         if h["status"] not in ("active", "draft", "broken"):
             problems.append(f"{d.name}: status must be active, draft or broken")
-        tools = list(h.get("tools_read") or []) + list(h.get("tools_write") or [])
+        for k in ("tools_read", "tools_write", "directory"):
+            v = h.get(k)
+            if v is not None and not (isinstance(v, list) and all(isinstance(x, str) and x for x in v)):
+                problems.append(f"{d.name}: {k} must be a list of names, like [a, b]")
+        if not isinstance(h.get("writes"), bool):
+            problems.append(f"{d.name}: writes must be true or false")
+            continue
+        tools = [t for k in ("tools_read", "tools_write") if isinstance(h.get(k), list) for t in h[k]]
         bad = [t for t in tools if FORBIDDEN.search(t)]
         if bad:
             problems.append(f"{d.name}: names forbidden tools {', '.join(bad)}")

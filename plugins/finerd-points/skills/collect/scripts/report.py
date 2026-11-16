@@ -82,11 +82,69 @@ def unknown_deadlines(led, catalog, table):
     return out
 
 
+CURRENCY = __import__("re").compile(r"^[A-Z]{3}$")
+
+
+def _kind(desc, direction):
+    import normalize as nz
+    up = desc.upper()
+    if nz.MARKER_RE.search(desc):
+        return "noncash"
+    if direction == "debit":
+        return "fee" if nz.FEE_RE.search(desc) else "purchase"
+    if "PAYMENT" in up or "AUTOPAY" in up or "THANK YOU" in up:
+        return "payment"
+    if "CREDIT" in up and not __import__("re").search(r"\b(REFUND|RETURN)", up):
+        return "credit"
+    return "refund"
+
+
+def ledger_transactions(led):
+    """Appendix D bridge: counted rows a card's own site showed (money, not points) become transactions in the
+    normalized contract, so credits are computed with no finance app. A source account belongs to a card when
+    its inventory id is the card's id. Returns (ledger view with links, accounts, transactions)."""
+    import json as _json
+    import normalize as nz
+    view = _json.loads(_json.dumps(led))
+    cards = {c["id"]: c for c in view["cards"]}
+    counted, _, _ = fc.counted_records(led)
+    accounts, txns = {}, []
+    for s_ in led.get("sources", []):
+        for a in s_["accounts"]:
+            card = cards.get(a.get("inventory"))
+            unit = a.get("unit") or s_.get("unit") or ""
+            if not card or not CURRENCY.match(str(unit)) or card.get("finance_link"):
+                continue  # a finance app, when linked, stays the source of the card's transactions
+            aid = f"ledger:{s_['id']}/{a['id']}"
+            card["finance_link"] = {"app": "ledger", "account_id": aid, "account_name": a.get("label") or a["id"]}
+            cov = fc.coverage_state(led, s_["id"], a["id"], "activity") or \
+                fc.coverage_state(led, s_["id"], a["id"], "credits")
+            covered = (cov or {}).get("covered")
+            accounts[aid] = {"account_id": aid, "name": a.get("label") or a["id"],
+                             "coverage": {"from": covered[0], "to": covered[1]} if covered else {"from": None, "to": None},
+                             "complete": bool(cov and cov["state"] == "complete"),
+                             "coverage_note": None if cov and cov["state"] == "complete" else
+                             "The card's site was not read completely for this period.", "scope": "filtered"}
+            for r in counted:
+                if r["source"] != s_["id"] or r["account"] != a["id"] or r["section"] not in ("activity", "credits"):
+                    continue
+                direction = "credit" if r["amount"] > 0 else "debit"
+                txns.append({"id": r["id"], "account_id": aid, "date": r["date"], "posted_date": None,
+                             "amount": abs(float(r["amount"])), "currency": unit, "direction": direction,
+                             "kind": _kind(r["description"], direction), "description": r["description"],
+                             "merchant": None, "category": None, "pending": False, "reversal_of": None,
+                             "reversal_hint": bool(nz.REVERSAL_RE.search(r["description"]))})
+    return view, accounts, txns
+
+
 def build(led, today, txn_paths=None, days=45, year=None, facts_dir=None):
     year = year or today.year
     catalog = ff.load_catalog(facts_dir)
     accounts, txns = crd.load_txns(txn_paths) if txn_paths else ({}, [])
-    cr = crd.analyze(led, catalog, accounts, txns, today, year)
+    view, l_accounts, l_txns = ledger_transactions(led)
+    accounts.update(l_accounts)
+    txns = list(txns) + l_txns
+    cr = crd.analyze(view, catalog, accounts, txns, today, year)
     cr["totals"] = crd.totals(cr)
     items = exp.collect(led, cr, today, days)
     table = bal.table(led, today)

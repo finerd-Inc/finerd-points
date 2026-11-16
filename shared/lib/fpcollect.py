@@ -292,6 +292,8 @@ def _apply_add_record(led, op, ts):
     rec = {k: v for k, v in op.items() if k not in ("op",)}
     rec["state"] = "active"
     rec["seen_in"] = [op["read_id"]]
+    if op.get("site_id"):
+        rec["site_id_seen"] = [op["read_id"]]
     rec["added_at"] = ts
     led["records"].append(rec)
     return {"op": op["op"], "id": rec["id"]}
@@ -303,6 +305,9 @@ def _apply_record_change(led, op, ts):
     if k == "seen_record":
         if op["read_id"] not in rec["seen_in"]:
             rec["seen_in"].append(op["read_id"])
+        if op.get("site_id") and op["site_id"] == rec.get("site_id") and \
+                op["read_id"] not in rec.setdefault("site_id_seen", []):
+            rec["site_id_seen"].append(op["read_id"])
     elif k == "revise_record":
         old = {f: rec.get(f) for f in ("date", "amount", "description", "status", "site_id")}
         rec.setdefault("revisions", []).append({"old": old, "reason": op["reason"], "read_id": op["read_id"],
@@ -393,7 +398,7 @@ V2 = {
                    {"id", "source", "account", "section", "read_id", "date", "amount", "unit", "description",
                     "status", "evidence", "site_id"},
                    check_add_record, _apply_add_record),
-    "seen_record": (("record", "read_id"), {"record", "read_id"}, check_record_change, _apply_record_change),
+    "seen_record": (("record", "read_id"), {"record", "read_id", "site_id"}, check_record_change, _apply_record_change),
     "revise_record": (("record", "read_id", "reason", "new"), {"record", "read_id", "reason", "new"},
                       check_record_change, _apply_record_change),
     "flag_not_shown": (("record", "read_id"), {"record", "read_id"}, check_record_change, _apply_record_change),
@@ -479,10 +484,10 @@ def plan_read(led, read):
         e = cands[0]
         r_key = (r["date"], r["amount"], r["_norm"], r["status"])
         if _key(e) == r_key:
-            batch.append({"op": "seen_record", "record": e["id"], "read_id": rid})
+            batch.append({"op": "seen_record", "record": e["id"], "read_id": rid, "site_id": sid})
             summary["known"] += 1
-        elif len(e.get("seen_in", [])) >= 2:
-            # a stable id (seen with this record in two reads): the changed row is a revision
+        elif len(e.get("site_id_seen", [])) >= 2:
+            # a stable id (this very id seen with this record in two reads): the changed row is a revision
             batch.append({"op": "revise_record", "record": e["id"], "read_id": rid,
                           "reason": "pending_posted" if e["status"] == "pending" and r["status"] == "posted"
                           else "site_id",
@@ -511,23 +516,35 @@ def plan_read(led, read):
             e = lst.pop(0)
             matched.add(e["id"])
             taken.add(n)
-            batch.append({"op": "seen_record", "record": e["id"], "read_id": rid})
+            op = {"op": "seen_record", "record": e["id"], "read_id": rid}
+            if r.get("site_id") and r["site_id"] == e.get("site_id"):
+                op["site_id"] = r["site_id"]
+            batch.append(op)
             summary["known"] += 1
 
     # 3. pending → posted
     left_rows = [n for n in range(len(rows)) if n not in taken]
-    pend = [e for e in mine if e["id"] not in matched and e["status"] == "pending"]
+    complete_day = lambda d: _inside(d, covered) and d not in cut  # noqa: E731
+    pend = [e for e in mine if e["id"] not in matched and e["status"] == "pending" and complete_day(e["date"])]
+    posted_free = [e for e in mine if e["id"] not in matched and e["status"] == "posted"]
+
+    def competes(e, r):
+        """An unmatched posted record that could be this same event: then no automatic revision."""
+        return _sign(e["amount"]) == _sign(r["amount"]) and abs(_days(e["date"], r["date"])) <= WINDOW_DAYS and \
+            (e["amount"] == r["amount"] or similar(e["description"], r["description"]))
 
     def fits(e, r):
         return (r["status"] == "posted" and _sign(e["amount"]) == _sign(r["amount"])
                 and abs(r["amount"] - e["amount"]) <= PENDING_TOLERANCE * abs(e["amount"])
                 and 0 <= _days(e["date"], r["date"]) <= PENDING_POST_DAYS)
     for e in pend:
-        cands = [n for n in left_rows if fits(e, rows[n])]
+        cands = [n for n in left_rows if complete_day(rows[n]["date"]) and fits(e, rows[n])]
         if len(cands) != 1:
             continue
         n = cands[0]
         if sum(1 for p in pend if p["id"] not in matched and fits(p, rows[n])) != 1:
+            continue
+        if any(competes(q, rows[n]) for q in posted_free if q["id"] not in matched):
             continue
         r = rows[n]
         batch.append({"op": "revise_record", "record": e["id"], "read_id": rid, "reason": "pending_posted",
@@ -556,6 +573,10 @@ def plan_read(led, read):
     # 5. new rows, with their possible counterparts
     others = [e for e in led["records"] if _active(e) and e["source"] != src_id]
     inv = _inventory_of(led, src_id, acc)
+    # A record already linked (and not decided «different») is taken: counterparts pair one to one, so two
+    # identical events on one side never both hide behind one record on the other.
+    linked = {x for ev in led["events"] if ev.get("kind") == "link" and ev.get("state") != "different"
+              for x in ev["records"]}
     used_ids = {e["id"] for e in led["records"]}
     for n in left_rows:
         r = rows[n]
@@ -571,31 +592,39 @@ def plan_read(led, read):
         if r["status"] != "posted":
             continue
         counterpart = None
+        best = None
         for e in mine:
-            if e["id"] in matched or e["status"] != "posted" or _sign(e["amount"]) != _sign(r["amount"]):
+            if e["id"] in matched or e["id"] in linked or e["status"] != "posted" or \
+                    _sign(e["amount"]) != _sign(r["amount"]):
                 continue
             near = abs(_days(e["date"], r["date"])) <= WINDOW_DAYS and \
                 (e["amount"] == r["amount"] or similar(e["description"], r["description"]))
             gone = e in not_shown
             if near or gone:
-                counterpart = (e, "within 14 days" if near else "no longer shown in the same interval")
-                break
+                score = (0 if e["amount"] == r["amount"] else 1, abs(_days(e["date"], r["date"])))
+                if best is None or score < best:
+                    best, counterpart = score, (e, "within 14 days" if near else "no longer shown in the same interval")
         if counterpart:
             e, why = counterpart
+            linked.add(e["id"])
+            linked.add(new_id)
             batch.append({"op": "link_records", "a": e["id"], "b": new_id, "relation": "possibly_same",
                           "basis": f"same account and sign, {why}"})
             summary["possibly_same"] += 1
             continue
         if inv:
-            for e in others:
-                if e["status"] != "posted" or _inventory_of(led, e["source"], e["account"]) != inv:
-                    continue
-                if _sign(e["amount"]) == _sign(r["amount"]) and abs(_days(e["date"], r["date"])) <= CROSS_DAYS \
-                        and abs(e["amount"] - r["amount"]) <= 0.01 * abs(r["amount"]):
-                    batch.append({"op": "link_records", "a": e["id"], "b": new_id, "relation": "probably_same",
-                                  "basis": f"same account in {e['source']}, date and amount close"})
-                    summary["probably_same_other_source"] += 1
-                    break
+            cross = [e for e in others
+                     if e["status"] == "posted" and e["id"] not in linked
+                     and _inventory_of(led, e["source"], e["account"]) == inv
+                     and _sign(e["amount"]) == _sign(r["amount"]) and abs(_days(e["date"], r["date"])) <= CROSS_DAYS
+                     and abs(e["amount"] - r["amount"]) <= 0.01 * abs(r["amount"])]
+            if cross:
+                e = min(cross, key=lambda x: (abs(_days(x["date"], r["date"])), abs(x["amount"] - r["amount"])))
+                linked.add(e["id"])
+                linked.add(new_id)
+                batch.append({"op": "link_records", "a": e["id"], "b": new_id, "relation": "probably_same",
+                              "basis": f"same account in {e['source']}, date and amount close"})
+                summary["probably_same_other_source"] += 1
     return batch, summary
 
 

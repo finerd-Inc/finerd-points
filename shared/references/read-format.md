@@ -36,7 +36,9 @@ batch the person previews.
 
 - `source_op` only the first time a source is seen (`kind`: program, bank_card, aggregator, sheet,
   email, statement, other). Each account names its owner (`person`, who must be in the ledger with
-  consent) and, when known, the inventory item it belongs to.
+  consent) and, when known, the inventory item it belongs to. For a card's own site use the card's id as
+  `inventory` and the currency as `unit` (for example `USD`): its activity rows then count as the card's
+  transactions for credits.
 - `section`: `activity`, `credits` (issuer credit rows), `certificates`, or another short name.
 - `covered`: the interval this read covers **completely**, or `null` if none. `state`:
   `complete` (needs `terminal`, `continuity` and `covered`), `ends_unreconciled`, `partial`,

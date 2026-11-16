@@ -60,7 +60,9 @@ Not in this version: status forecasts, «keep or cancel this card», unattended 
    their programs instead. Record a program only when the person confirms it and that it is theirs
    (`add_inventory` with `found_by: "email"`).
 5. Ask what else they have: programs, cards, apps (AwardWallet, a finance app), spreadsheets. Each
-   becomes an `add_inventory` item with its owner; cards also get `add_card` (match the catalog,
+   becomes an `add_inventory` item with its owner; a program also gets `add_account` with the same id (its
+   balances are observed on `account:<id>`), and a card gets `add_card` with the same id (so what its own
+   site shows reaches the credit calculator) (match the catalog,
    `facts/cards/*.json`; a card outside the catalog is still added; for anniversary-based credits ask
    the open date or the anniversary MM-DD; never card numbers, last four digits optional).
 6. One batch, `ledger.py preview --folder …`, show it, `ledger.py apply --folder … --confirm <hash>`.

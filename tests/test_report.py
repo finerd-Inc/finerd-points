@@ -88,3 +88,30 @@ class Acceptance(unittest.TestCase):
         self.assertEqual(kinds, {"missing_rows", "coverage"})  # the sample read is partial
         ref["accounts"][0]["excluded"] = {"reason": "frozen before the run"}
         self.assertTrue(ac.compare(led, ref)[0])
+
+
+class Bridge(unittest.TestCase):
+
+    def test_card_site_rows_reach_the_credit_calculator(self):
+        led = fl.new_ledger("Rad", storage="folder")
+        b = [{"op": "add_card", "id": "gold", "person": "me", "nickname": "Gold", "catalog_ref": "amex-gold",
+              "opened_on": "2024-03-13"},
+             {"op": "add_inventory", "id": "gold", "kind": "card", "label": "Amex Gold", "person": "me"},
+             {"op": "add_source", "id": "amex", "kind": "bank_card", "name": "American Express",
+              "hosts": ["global.americanexpress.com"], "unit": "USD",
+              "accounts": [{"id": "gold-card", "label": "Gold Card", "person": "me", "unit": "USD",
+                            "inventory": "gold"}]}]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        rd = {"source": "amex", "account": "gold-card", "section": "activity", "read_id": "r1",
+              "requested": ["2026-01-01", "2026-11-16"], "covered": ["2026-01-01", "2026-11-16"],
+              "state": "complete", "terminal": "statement period start reached",
+              "continuity": "statement balances chain", "read_at": "2026-11-16T12:00:00Z", "unit": "USD",
+              "rows": [{"date": "2026-09-10", "amount": 50, "description": "AMEX RESY CREDIT", "status": "posted"},
+                       {"date": "2026-09-05", "amount": -120, "description": "RESY RESTAURANT", "status": "posted"}]}
+        bb, _ = fc.plan_read(led, rd)
+        fl.apply_batch(led, bb, fl.preview_batch(led, bb)[0])
+        r = report.build(led, TODAY)
+        resy = next(x for x in r["credits"]["cards"][0]["benefits"] if x["benefit"] == "resy-credit")
+        p = next(p for p in resy["periods"] if p["key"] == "2026-H2")
+        self.assertEqual((p["status"], p["used"]), ("used", 50.0))
+        self.assertEqual(led["cards"][0].get("finance_link"), None)  # the ledger itself is not changed

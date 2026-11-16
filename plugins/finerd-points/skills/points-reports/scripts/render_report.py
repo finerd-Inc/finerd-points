@@ -34,7 +34,7 @@ CUR = {"sym": "$"}
 
 
 def money(v, sign=False):
-    c = CUR["sym"]
+    c = E(CUR["sym"])
     if v is None:
         return "—"
     if abs(v) < 0.5:
@@ -45,7 +45,7 @@ def money(v, sign=False):
 
 
 def money2(v):
-    return "—" if v is None else f"{CUR['sym']}{v:,.2f}"
+    return "—" if v is None else f"{E(CUR['sym'])}{v:,.2f}"
 
 
 def chip(text):
@@ -170,6 +170,9 @@ def credits_section(cr):
                        f"{', older than 90 days: unverified' if c.get('facts_stale') else ''}.</p>")
         if c.get("coverage_note"):
             out.append(f"<p class='note'>{E(c['coverage_note'])}</p>")
+        for k in ("note", "note_soft"):
+            if c.get(k):
+                out.append(f"<p class='note'>{E(c[k])}</p>")
         if not cur:
             out.append("<p class='note'>No money credits to track on this card this year.</p>")
             continue

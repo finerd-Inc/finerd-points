@@ -196,9 +196,14 @@ def _num(v, allow_none=False, minimum=0):
 
 # ---------------------------------------------------------------- create / load / save
 
+CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
+
+
 def new_ledger(person_name, currency="USD", timezone="UTC", storage="file",
                household_mode="single", person_id="me"):
     _refuse_forbidden({"name": person_name}, "The name")
+    if not CURRENCY_RE.match(str(currency)):
+        raise LedgerError("The report currency is a three-letter code such as USD or EUR.")
     ts = iso(now_utc())
     led = {
         "format": FORMAT,
@@ -253,6 +258,8 @@ def validate(led):
     for k in ("report_currency", "timezone", "storage"):
         if not meta["setup"].get(k):
             raise LedgerError(f"The ledger's setup record has no {k}.")
+    if not CURRENCY_RE.match(str(meta["setup"]["report_currency"])):
+        raise LedgerError("The ledger's report currency is not a three-letter code.")
     meta.setdefault("redactions", [])
     meta["settings"].setdefault("credit_values", {})
     for c in COLLECTIONS:
@@ -352,9 +359,22 @@ CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\
 MARKUP = re.compile(r"<[^>]{0,200}>|\[([^\]]{0,200})\]\([^)]{0,500}\)|```|`")
 
 
+URL_TAIL = re.compile(r"(?i)\b((?:https?://|www\.)[^\s?#<>\"']+)[?#][^\s<>\"']*")
+KV_SECRET = re.compile(r"(?i)\b[\w.-]*(token|secret|passw(or)?d|session|sid|sig(nature)?|auth|code|key|otp|"
+                       r"ticket|nonce|jwt|bearer)[\w.-]*\s*[=:]\s*[^\s&;,]{6,}")
+BEARER = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{12,}")
+
+
 def redact_text(text):
     """Remove what must never be stored from free text. Returns (clean text, kinds removed)."""
     kinds = set()
+    if URL_TAIL.search(text):
+        kinds.add("a link's query or fragment")
+        text = URL_TAIL.sub(lambda m: m.group(1), text)
+    for rx in (BEARER, KV_SECRET):
+        if rx.search(text):
+            kinds.add("a token or code")
+            text = rx.sub("[removed]", text)
     for rx, why in SECRET_TEXT:
         if rx.search(text):
             kinds.add(why)
@@ -417,9 +437,17 @@ def _atomic_write(p, led):
     os.replace(tmp, p)
 
 
+def _refuse_folder_ledger(p, led):
+    """A ledger in a folder is replaced only by bin/commit (spec v2, appendix E); these v1 file writes refuse it."""
+    if led.get("_meta", {}).get("setup", {}).get("storage") == "folder" or (p.parent / "bin" / "commit").exists():
+        raise LedgerError("This ledger lives in a ledger folder and is written only through bin/commit "
+                          "(ledger.py apply --folder …).")
+
+
 def create(path, led):
     """Write a brand-new ledger as version 1; refuses if anything already exists at path."""
     p = Path(path)
+    _refuse_folder_ledger(p, led)
     validate(led)
     led["version"] = 1
     with _Lock(p):
@@ -439,6 +467,7 @@ def save(path, led, base_version):
     or an older copy is being saved over a newer one).
     """
     p = Path(path)
+    _refuse_folder_ledger(p, led)
     validate(led)
     with _Lock(p):
         if p.exists():
@@ -682,12 +711,9 @@ def _persons_named(obj):
 
 def _check_op(led, op, i, staged_ids):
     kind = op.get("op") if isinstance(op, dict) else None
-    removed = {r.get("person") for r in led["_meta"].get("redactions", []) if r.get("person")}
-    if removed and isinstance(op, dict):
-        named = _persons_named(op) | ({op.get("id")} if kind == "add_person" else set())
-        if named & removed:
-            raise LedgerError(f"Step {i + 1}: this change names a household member whose data was removed at their "
-                              f"request; it cannot bring that data back.")
+    if led["_meta"].get("redactions") and isinstance(op, dict) and names_removed(op, _removed_refs(led)):
+        raise LedgerError(f"Step {i + 1}: this change names a household member, or a card, account or row, whose data "
+                          f"was removed at their request; it cannot bring that data back.")
     if kind in EXTRA_OPS:
         missing = [k for k in REQUIRED[kind] if op.get(k) in (None, "")]
         if missing:
@@ -787,6 +813,8 @@ def _check_op(led, op, i, staged_ids):
     elif kind == "set_setup":
         if op["key"] not in SETUP_KEYS:
             raise LedgerError(f"Step {i + 1}: setup key must be one of {', '.join(SETUP_KEYS)}.")
+        if op["key"] == "report_currency" and not CURRENCY_RE.match(str(op["value"])):
+            raise LedgerError(f"Step {i + 1}: the report currency is a three-letter code such as USD.")
         if op["key"] == "storage" and op["value"] not in ("file", "folder"):
             raise LedgerError(f"Step {i + 1}: storage is file or folder; a Google Sheet is an export until the "
                               f"platform probe passes.")
@@ -1215,8 +1243,60 @@ def redact_person(led, person_id, confirm_hash, session=None, now=None):
             ev["title"] = "finerd points (removed)"
             ev["description"] = ""
     led["_meta"]["redactions"].append({"at": ts, "person": person_id, "files_scrubbed": False,
+                                       "removed": tombstones(plan),
                                        "counts": {k: len(v) for k, v in plan.items() if k != "_names"}})
     return ops
+
+
+def tombstones(plan):
+    """The ids a removal took away; no later change may name them again (no replay brings data back)."""
+    return {k: sorted(plan.get(k, [])) for k in ("cards", "accounts", "records", "inventory", "source_accounts",
+                                                   "certificates", "signup_offers", "redemptions", "costs")}
+
+
+def _removed_refs(led):
+    out = {"person": set(), "card": set(), "account": set(), "record": set(), "inventory": set(),
+           "source_account": set(), "certificate": set(), "signup": set(), "other": set()}
+    for r in led["_meta"].get("redactions", []):
+        if r.get("person"):
+            out["person"].add(r["person"])
+        t = r.get("removed") or {}
+        out["card"].update(t.get("cards", []))
+        out["account"].update(t.get("accounts", []))
+        out["record"].update(t.get("records", []))
+        out["inventory"].update(t.get("inventory", []))
+        out["source_account"].update(t.get("source_accounts", []))
+        out["certificate"].update(t.get("certificates", []))
+        out["signup"].update(t.get("signup_offers", []))
+        out["other"].update(t.get("redemptions", []) + t.get("costs", []))
+    return out
+
+
+def names_removed(op, refs):
+    """True when an operation names a removed person or anything a removal took away, directly or through a
+    subject such as benefit:<card>/…, account:<id> or certificate:<id>."""
+    if not isinstance(op, dict):
+        return False
+    if _persons_named(op) & refs["person"] or (op.get("op") == "add_person" and op.get("id") in refs["person"]):
+        return True
+    ids = refs["card"] | refs["account"] | refs["record"] | refs["inventory"] | refs["certificate"] | \
+        refs["signup"] | refs["other"]
+
+    def walk(x, key=None):
+        if isinstance(x, dict):
+            if "source" in x and "account" in x and f"{x.get('source')}/{x.get('account')}" in refs["source_account"]:
+                return True
+            return any(walk(v, k) for k, v in x.items())
+        if isinstance(x, list):
+            return any(walk(v, key) for v in x)
+        if isinstance(x, str):
+            if key in ("id", "card", "account", "record", "a", "b", "inventory", "target", "redemption") and x in ids:
+                return True
+            m = re.match(r"^(card|account|benefit|certificate|signup):([^/]+)", x)
+            if m and m.group(2) in ids:
+                return True
+        return False
+    return walk(op)
 
 
 def apply_redaction(led, person_id, plan=None):

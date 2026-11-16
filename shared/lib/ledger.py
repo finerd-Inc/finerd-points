@@ -103,6 +103,14 @@ def cmd_open(a):
     root = Path(a.folder).expanduser().resolve()
     reinstalled = st.install_script(root) if a.reinstall else False
     chk = st.check(root)
+    try:
+        led, bh, bv = st.read(root)
+    except st.StoreError as e:
+        good = st.newest_good_backup(root)
+        out({"damaged": str(e), "read_only_backup": good[1] if good else None,
+             "backup_version": good[0]["version"] if good else None,
+             "next": "Show the person this message. Nothing is written until they decide how to restore."})
+        sys.exit(2)
     removed = st.cleanup(root) if a.cleanup else []
     scrubbed = st.scrub_pending_redactions(root) if a.cleanup else []
     led, bh, bv = st.read(root)
@@ -160,6 +168,7 @@ def cmd_apply(a):
     batch = _json_arg("@" + a.batch)
     res = st.apply_and_publish(a.folder, batch, a.confirm, writer=a.writer, summary=a.summary or "")
     if res.get("result") == "committed":
+        res["marked_done"] = st.mark_done(a.folder, *(a.done or []))
         led, _, _ = st.read(a.folder)
         res["external_to_perform"] = [x for x in led["oplog"] if x["state"] == "planned"]
     out(res)
@@ -311,7 +320,13 @@ def main(argv=None):
     s.add_argument("--batch", required=True)
     s.add_argument("--confirm", required=True, help="the batch hash from the preview the person saw")
     s.add_argument("--summary", help="a few words for the commit log")
+    s.add_argument("--done", nargs="*", help="working files in work/ this commit finished (renamed done-…)")
     s.set_defaults(fn=cmd_apply)
+
+    s = sub.add_parser("done", help="mark working files committed or discarded (cleaned up 30 days later)")
+    s.add_argument("--folder", required=True)
+    s.add_argument("files", nargs="+")
+    s.set_defaults(fn=lambda a: out({"marked_done": st.mark_done(a.folder, *a.files)}))
 
     s = sub.add_parser("op", help="record the outcome of an external write")
     where(s, folder_only=True)

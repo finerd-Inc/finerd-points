@@ -296,3 +296,37 @@ class InjectionSet(unittest.TestCase):
             self.assertNotIn("<", d)
             self.assertNotIn("https://", d) if "[" in text else None
             self.assertLessEqual(len(d), fc.DESC_LIMIT)
+
+
+class ReviewRound1Identity(unittest.TestCase):
+
+    def test_two_identical_events_in_two_sources_count_twice_not_three_times(self):
+        led = base_ledger()
+        two = [row("2026-10-05", 100, "Bonus"), row("2026-10-05", 100, "Bonus")]
+        read(led, two, ["2026-09-01", "2026-11-16"], source="aw", account="aw-hyatt")
+        _, s = read(led, two, ["2026-09-01", "2026-11-16"])
+        self.assertEqual(s["probably_same_other_source"], 2)
+        counted, _, _ = fc.counted_records(led)
+        self.assertEqual(sum(r["amount"] for r in counted), 200)
+
+    def test_pending_does_not_revise_when_a_posted_record_competes(self):
+        led = base_ledger()
+        read(led, [row("2026-10-01", 100, "Dining", "pending"), row("2026-10-02", 110, "Dining")],
+             ["2026-09-01", "2026-10-10"])
+        _, s = read(led, [row("2026-10-03", 110, "Dining")], ["2026-09-01", "2026-10-20"])
+        self.assertEqual(s["revised"], 0)
+        self.assertEqual(total(led)[0], 110)  # never 220
+
+    def test_site_id_stability_counts_the_id_itself(self):
+        led = base_ledger()
+        read(led, [row("2026-10-01", 100, "SHOPPING", site_id="T1")], ["2026-09-01", "2026-11-16"])
+        read(led, [row("2026-10-01", 100, "SHOPPING", site_id="T2")], ["2026-09-17", "2026-11-16"])
+        _, s = read(led, [row("2026-10-05", 130, "SHOPPING ADJ", site_id="T1")], ["2026-09-17", "2026-11-16"])
+        self.assertEqual(s["revised"], 0)
+
+    def test_pending_outside_coverage_is_not_revised(self):
+        led = base_ledger()
+        read(led, [row("2026-09-15", 40, "Dining", "pending")], ["2026-09-01", "2026-09-16"])
+        _, s = read(led, [row("2026-09-18", 40, "Dining")], ["2026-09-17", "2026-11-16"])
+        self.assertEqual(s["revised"], 0)
+        self.assertEqual(led["records"][0]["status"], "pending")

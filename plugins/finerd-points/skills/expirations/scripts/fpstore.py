@@ -97,6 +97,7 @@ def install(folder):
     root.mkdir(parents=True, exist_ok=True)
     if created:
         os.chmod(root, 0o700)
+    _no_links(root)
     for d in SUBDIRS:
         (root / d).mkdir(exist_ok=True)
     install_script(root)
@@ -107,6 +108,8 @@ def install_script(root):
     """Put this skill's copy of the commit script at bin/commit (replaced, never edited in place).
     Returns True if it was (re)installed."""
     dst = Path(root) / "bin" / "commit"
+    if dst.is_symlink() or (Path(root) / "bin").is_symlink():
+        raise StoreError("bin/commit or bin/ is a symbolic link; refusing to install through it.")
     if dst.exists() and file_sha(dst) == script_hash():
         return False
     dst.parent.mkdir(exist_ok=True)
@@ -117,25 +120,79 @@ def install_script(root):
     return True
 
 
+def _no_links(root):
+    """Refuse a folder whose own parts are symbolic links: every path written or removed must stay inside it."""
+    for name in ("ledger.json",) + SUBDIRS:
+        if (root / name).is_symlink():
+            raise StoreError(f"{name} in {root} is a symbolic link. finerd points writes only real files inside "
+                             f"the ledger folder; replace the link with a real folder or file.")
+
+
+def _inside(root, path):
+    """True when path is inside root after resolving links (and is not itself a link)."""
+    p = Path(path)
+    if p.is_symlink():
+        return False
+    try:
+        p.resolve().relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
 def _root(folder):
     root = Path(folder).expanduser().resolve()
     if not (root / "bin").is_dir():
         raise StoreError(f"{root} is not a finerd points ledger folder (no bin/). Set it up first.")
+    _no_links(root)
     return root
 
 
 # ---------------------------------------------------------------- read
 
 def read(folder):
-    """Return (ledger or None, base_hash, base_version). The hash is of the exact bytes parsed."""
+    """Return (ledger or None, base_hash, base_version). The hash is of the exact bytes parsed.
+    A damaged ledger raises StoreError naming the newest good backup; writers stop there, and readers may
+    use read_backup() to show it, marked as a backup (spec v2, appendix E step 3)."""
     root = _root(folder)
     p = root / "ledger.json"
     try:
         data = p.read_bytes()
     except FileNotFoundError:
         return None, "none", 0
-    led = fl.loads(data.decode("utf-8"))
+    try:
+        led = fl.loads(data.decode("utf-8"))
+    except (fl.LedgerError, UnicodeDecodeError) as e:
+        good = newest_good_backup(root)
+        hint = (f" The newest good backup is {good[1]} (version {good[0]['version']}); finerd points can show "
+                f"it read-only, and writes nothing until the person decides." if good else " No good backup was found.")
+        raise StoreError(f"ledger.json cannot be read ({e}).{hint}")
     return led, hashlib.sha256(data).hexdigest(), led["version"]
+
+
+def newest_good_backup(root):
+    """(ledger, file name) of the newest backup that loads, or None."""
+    root = Path(root)
+    cands = []
+    for b in (root / "backups").glob("ledger.v*.json"):
+        if b.is_symlink():
+            continue
+        m = re.match(r"^ledger\.v(\d+)-", b.name)
+        cands.append((int(m.group(1)) if m else -1, b))
+    for _, b in sorted(cands, reverse=True):
+        try:
+            return fl.loads(b.read_text(encoding="utf-8")), b.name
+        except (fl.LedgerError, OSError, UnicodeDecodeError):
+            continue
+    return None
+
+
+def read_backup(folder):
+    """Read-only fallback when ledger.json is damaged: (ledger, backup name) or raises StoreError."""
+    good = newest_good_backup(_root(folder))
+    if not good:
+        raise StoreError("Neither ledger.json nor any backup can be read.")
+    return good
 
 
 # ---------------------------------------------------------------- commit
@@ -314,6 +371,8 @@ REMOVED = "(removed at a household member's request)"
 
 
 def _rewrite_json(path, fn):
+    if Path(path).is_symlink():
+        return False
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -346,12 +405,12 @@ def scrub_person(folder, person_id, led_now):
                          if a.get("person") == person_id)
     changed = []
 
+    refs = fl._removed_refs(led_now)
+    refs["person"].add(person_id)
+    refs["source_account"].update(gone_accounts)
+
     def mentions(op):
-        if not isinstance(op, dict):
-            return False
-        if person_id in fl._persons_named(op) or (op.get("op") == "add_person" and op.get("id") == person_id):
-            return True
-        return f"{op.get('source')}/{op.get('account')}" in gone_accounts
+        return fl.names_removed(op, refs)
 
     for path in sorted((root / "journal").glob("*.batch.json")) + sorted((root / "work").glob("*.batch.json")) + \
             sorted((root / "work").glob("batch-*.json")):
@@ -418,43 +477,77 @@ def export_archive(folder, out_path):
 
 # ---------------------------------------------------------------- housekeeping (Claude Code / Cowork only)
 
+def mark_done(folder, *names):
+    """Rename working files (reads, batches) that were committed or discarded to done-<name>, so cleanup may
+    remove them 30 days later. Renaming is allowed in a chat; deleting is not."""
+    root = _root(folder)
+    out = []
+    for n in names:
+        p = (root / "work" / Path(n).name)
+        if p.exists() and _inside(root, p) and not p.name.startswith("done-"):
+            dst = p.with_name("done-" + p.name)
+            os.replace(p, dst)
+            out.append(dst.name)
+    return out
+
+
 def cleanup(folder, now=None, keep_days=30):
-    """Remove committed or discarded work files older than keep_days, released locks, and backups beyond the last
-    20 plus one per month. A chat cannot delete files, so this runs when Claude Code or Cowork opens the ledger.
-    Returns the list of removed paths (relative)."""
+    """Remove, 30 days after they were finished: candidates of committed or abandoned operations, working files
+    marked done, saved previews; released locks; backups beyond the last 20 plus one per month. Nothing else in
+    work/ is touched — an unfinished read or batch stays until it is committed or discarded. Nothing is followed
+    through a symbolic link. A chat cannot delete files, so this runs when Claude Code or Cowork opens the
+    ledger. Returns the removed paths (relative)."""
     root = _root(folder)
     now = (now or fl.now_utc()).timestamp()
+    limit = keep_days * 86400
     removed = []
-    live = set()
+
+    def rm(p):
+        if _inside(root, p) and p.is_file():
+            p.unlink()
+            removed.append(str(p.relative_to(root)))
+
+    finished = {}
     for j in (root / "journal").glob("*.json"):
-        if j.name.endswith(".batch.json"):
+        if j.name.endswith(".batch.json") or not _inside(root, j):
             continue
         try:
             entry = json.loads(j.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except (OSError, ValueError):
             continue
-        if entry.get("state") == "planned":
-            live.add(Path(entry.get("candidate", "")).name)
-    for p in (root / "work").iterdir():
-        base = p.name.split(".json")[0] + ".json" if ".json" in p.name else p.name
-        if base in live or not p.is_file():
+        if entry.get("state") in ("committed", "abandoned"):
+            finished[Path(entry.get("candidate", "")).name] = j.stat().st_mtime
+    for p in list((root / "work").iterdir()):
+        if p.is_symlink() or not p.is_file():
             continue
-        if now - p.stat().st_mtime > keep_days * 86400:
-            p.unlink()
-            removed.append(f"work/{p.name}")
-    for p in (root / "locks").iterdir():
-        if p.is_dir():
-            for f in p.iterdir():
+        base = re.sub(r"(\.meta|\.batch\.json)$", "", p.name)
+        if base in finished:
+            if now - finished[base] > limit:
+                rm(p)
+        elif p.name.startswith("done-"):
+            if now - p.stat().st_ctime > limit:  # ctime: when it was renamed to done-
+                rm(p)
+        elif p.name.startswith("preview-"):
+            if now - p.stat().st_mtime > limit:
+                rm(p)
+    for p in list((root / "locks").iterdir()):
+        if p.is_symlink() or not p.is_dir() or not _inside(root, p):
+            continue
+        for f in p.iterdir():
+            if f.is_file() and not f.is_symlink():
                 f.unlink()
+        try:
             p.rmdir()
             removed.append(f"locks/{p.name}")
-    backups = sorted((root / "backups").glob("ledger.v*.json"), key=lambda x: x.stat().st_mtime, reverse=True)
+        except OSError:
+            pass
+    backups = sorted((b for b in (root / "backups").glob("ledger.v*.json") if not b.is_symlink()),
+                     key=lambda x: x.stat().st_mtime, reverse=True)
     months = set()
     for i, b in enumerate(backups):
         month = fl.iso(fl._dt.datetime.fromtimestamp(b.stat().st_mtime, fl._dt.timezone.utc))[:7]
         if i < BACKUPS_KEEP or month not in months:
             months.add(month)
             continue
-        b.unlink()
-        removed.append(f"backups/{b.name}")
+        rm(b)
     return removed

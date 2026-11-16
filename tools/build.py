@@ -50,6 +50,7 @@ PLAN = {
 # short paths, and none of the text between github-build-only markers.
 TARGETS = {"github": None, "claude-directory": "claude", "chatgpt": "chatgpt"}
 LEGAL_TEXTS = {"TERMS.md", "PRIVACY.md"}
+ALLOWED_SUFFIXES = {".md", ".py", ".json", ".sh", ".css", ".png"}
 GITHUB_ONLY = re.compile(r"\n?<!-- github-build-only:start -->.*?<!-- github-build-only:end -->\n?", re.S)
 SKIP = {"__pycache__", ".DS_Store"}
 
@@ -131,6 +132,17 @@ def check():
             problems.append(f"{skill}: unexpected {rel}")
         if not (d / "SKILL.md").exists():
             problems.append(f"{skill}: no SKILL.md")
+    known = {PLUGIN / f for f in ROOT_COPIES} | {PLUGIN / ".claude-plugin" / "plugin.json", PLUGIN / "README.md",
+                                                  PLUGIN / "assets" / "icon.png"}
+    for skill in PLAN:
+        known.add(SKILLS / skill / "SKILL.md")
+        known |= {SKILLS / skill / rel for rel in expected_files(skill)}
+    for p in PLUGIN.rglob("*"):
+        if p.is_file() and not (set(p.parts) & SKIP) and p not in known:
+            problems.append(f"{p.relative_to(ROOT)} is not part of the plugin (only generated copies, SKILL.md files and "
+                            f"the manifest, README, legal texts and icon may be there)")
+        if p.is_symlink():
+            problems.append(f"{p.relative_to(ROOT)} is a symbolic link")
     for p in PLUGIN.rglob("*"):
         if p.is_file() and p.stat().st_size >= 256 * 1024:
             problems.append(f"{p.relative_to(ROOT)} is {p.stat().st_size // 1024} KiB (directory review holds ≥256 KiB)")
@@ -173,6 +185,8 @@ def package(target):
                     continue
                 if "apps" in rel.parts and rel.parts[rel.parts.index("apps") + 1] in excluded:
                     continue
+            if directory is not None and p.suffix not in ALLOWED_SUFFIXES and p.name not in ("LICENSE", "NOTICE"):
+                sys.exit(f"The {target} build may not carry {rel} (only {', '.join(sorted(ALLOWED_SUFFIXES))})")
             data = p.read_bytes()
             if directory is not None and p.suffix == ".md":
                 data = GITHUB_ONLY.sub("\n", data.decode("utf-8")).encode("utf-8")
@@ -191,7 +205,7 @@ def package(target):
             for name in z.namelist():
                 if "short-paths" in name:
                     bad.append(name)
-                elif name.endswith((".md", ".py", ".json", ".sh")):
+                elif not name.endswith(".png"):
                     if name.rsplit("/", 1)[-1] in LEGAL_TEXTS:
                         continue  # the terms disclose that short paths exist; they load nothing
                     m = rx.search(z.read(name).decode("utf-8", "ignore"))

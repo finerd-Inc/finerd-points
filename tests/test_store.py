@@ -338,12 +338,17 @@ class FolderChoice(unittest.TestCase):
             first_ledger(root)
             led, bh, bv = st.read(root)
             st.publish(root, led, bh, bv)
+            (root / "work" / "batch-unfinished.json").write_text("[]")   # never committed nor discarded
+            (root / "work" / "read-x.json").write_text("{}")
+            st.mark_done(root, "read-x.json")
             old = time.time() - 40 * 86400
-            for p in (root / "work").iterdir():
+            for p in list((root / "work").iterdir()) + list((root / "journal").iterdir()):
                 os.utime(p, (old, old))
-            removed = st.cleanup(root)
+            removed = st.cleanup(root, now=fl.now_utc())
             self.assertTrue(any(r.startswith("locks/") for r in removed))
-            self.assertTrue(any(r.startswith("work/") for r in removed))
+            self.assertTrue(any(r.startswith("work/cand-") for r in removed))
+            self.assertTrue((root / "work" / "batch-unfinished.json").exists())  # unfinished work is kept
+            self.assertTrue((root / "work" / "done-read-x.json").exists())       # done only now: 30 days from now
             self.assertEqual(st.check(root)["chain"], "ok 2")
 
 
@@ -479,3 +484,90 @@ class Export(unittest.TestCase):
             self.assertEqual(sum(n.startswith("finerd-points/journal/") for n in names), 2)
             with self.assertRaises(st.StoreError):
                 st.export_archive(root, root / "ledger-copy.zip")
+
+
+
+class ReviewRound1(unittest.TestCase):
+    """Codex code review 1 (16 November): each P0/P1 as a regression."""
+
+    def test_v1_save_refuses_a_folder_ledger(self):
+        with Folder() as root:
+            first_ledger(root)
+            led, _, bv = st.read(root)
+            with self.assertRaises(fl.LedgerError):
+                fl.save(root / "ledger.json", led, bv)
+
+    def test_symlinked_parts_are_refused_and_never_followed(self):
+        with Folder() as root, tempfile.TemporaryDirectory() as outside:
+            first_ledger(root)
+            victim = Path(outside, "victim.txt")
+            victim.write_text("keep me")
+            os.rename(root / "locks", root / "locks-real")
+            os.symlink(outside, root / "locks")
+            with self.assertRaises(st.StoreError):
+                st.cleanup(root)
+            code, out = sh(root, "check")
+            self.assertEqual(code, 12, out)
+            self.assertTrue(victim.exists())
+
+    def test_recovery_finds_a_commit_in_compact_json(self):
+        with Folder() as root:
+            first_ledger(root)
+            led, bh, bv = st.read(root)
+            op = st.new_op_id()
+            cand = st.prepare_candidate(led, bv, op, "x")
+            data = json.dumps(cand, separators=(",", ":")).encode()
+            (root / "ledger.json").write_bytes(data)
+            (root / "journal" / f"{op}.json").write_text(
+                '{\n  "protocol": 1,\n  "op_id": "%s",\n  "base_version": %d,\n  "base_hash": "%s",\n'
+                '  "new_version": %d,\n  "new_hash": "%s",\n  "candidate": "work/c",\n  "at": "x",\n'
+                '  "host": "x",\n  "state": "planned"\n}\n' % (op, bv, bh, bv + 1, hashlib.sha256(data).hexdigest()))
+            self.assertIn(f"{op} committed", st.check(root)["recovered"])
+
+    def test_lock_without_owner_is_released_after_two_minutes(self):
+        with Folder() as root:
+            first_ledger(root)
+            (root / ".lock").mkdir()
+            old = time.time() - 300
+            os.utime(root / ".lock", (old, old))
+            led, bh, bv = st.read(root)
+            res = st.publish(root, led, bh, bv)
+            self.assertEqual(res["result"], "committed", res)
+            self.assertTrue(any("without an owner" in n for n in res["notes"]))
+
+    def test_damaged_ledger_names_the_newest_good_backup(self):
+        with Folder() as root:
+            first_ledger(root)
+            led, bh, bv = st.read(root)
+            st.publish(root, led, bh, bv)
+            (root / "ledger.json").write_text("{ damaged")
+            with self.assertRaises(st.StoreError) as cm:
+                st.read(root)
+            self.assertIn("ledger.v1-", str(cm.exception))
+            led, name = st.read_backup(root)
+            self.assertEqual(led["version"], 1)
+
+    def test_tokens_in_links_and_key_values_are_removed(self):
+        for text in ("see https://bank.example/benefits?access_token=Abc123456789XYZ&x=1",
+                     "auth_code=9f8e7d6c5b4a ok", "Authorization: Bearer abcdefghijklmnop.qrst"):
+            clean = fl.clean_text(text)
+            self.assertNotIn("Abc123456789XYZ", clean)
+            self.assertNotIn("9f8e7d6c5b4a", clean)
+            self.assertNotIn("abcdefghijklmnop", clean)
+        self.assertEqual(fl.clean_text("Transfer to Flying Blue code 50"), "Transfer to Flying Blue code 50")
+
+    def test_currency_is_a_code(self):
+        with self.assertRaises(fl.LedgerError):
+            fl.new_ledger("T", currency="<img src=x onerror=alert(1)>")
+
+    def test_removed_cards_cannot_come_back_through_subjects(self):
+        led = fl.new_ledger("T", storage="folder")
+        b = [{"op": "add_person", "id": "anna", "name": "Anna", "consent": {"given": True, "on": "2026-11-16"}},
+             {"op": "add_card", "id": "anna-card", "person": "anna", "nickname": "Anna card"}]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        h, _, _ = fl.redaction_plan(led, "anna")
+        fl.redact_person(led, "anna", h)
+        replay = [{"op": "observe", "subject": "benefit:anna-card/travel/2026", "field": "used_amount", "value": 5,
+                   "source": {"kind": "person"}, "as_of": "2026-11-16", "confidence": "confirmed"}]
+        with self.assertRaises(fl.LedgerError):
+            fl.preview_batch(led, replay)
