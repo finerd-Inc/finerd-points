@@ -91,3 +91,22 @@ class IssuerReported(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FactDates(unittest.TestCase):
+    catalog = ff.load_catalog(ROOT / "shared" / "facts")
+
+    def test_each_benefit_carries_its_check_date_and_state(self):
+        led = ledger()
+        res = credits.analyze(led, self.catalog, {}, [], TODAY, 2026)
+        b = next(x for x in res["cards"][0]["benefits"] if x["benefit"] == "resy-credit")
+        self.assertEqual((b["fact_checked_on"], b["fact_state"]), ("2026-11-02", "verified"))
+        late = credits.analyze(led, self.catalog, {}, [], dt.date(2027, 3, 1), 2027)
+        b = next(x for x in late["cards"][0]["benefits"] if x["benefit"] == "resy-credit")
+        self.assertEqual(b["fact_state"], "unverified")
+
+    def test_stale_list(self):
+        items = ff.stale_facts(self.catalog, TODAY)
+        self.assertIn(("cards/bofa-atmos-summit.json", "travel-delay-credit", "2026-11-02",
+                       "no issuer or program page confirms it yet"), items)
+        self.assertGreater(len(ff.stale_facts(self.catalog, dt.date(2027, 3, 1))), len(items))

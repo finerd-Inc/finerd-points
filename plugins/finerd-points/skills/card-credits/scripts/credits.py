@@ -308,6 +308,7 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                     "requires": gated, "descriptor_verified": bool(match.get("verified")),
                     "evidence": b["evidence"], "enrollment": b["enrollment"],
                     "enrolled": enrolled["value"] if enrolled else None, "shared_group": b.get("shared_group"),
+                    "fact_checked_on": ff.fact_checked_on(cf, b), "fact_state": ff.fact_state(cf, b, today),
                     "periods": []}
             lag = match.get("posting_lag_days")
             visible = b["evidence"] in VISIBLE
@@ -617,7 +618,8 @@ def to_markdown(res):
                f"{sym}{t['without_evidence']:,.2f}." + (f" Pending, not counted yet: {sym}{t['pending']:,.2f}."
                                                      if t["pending"] else ""))
     for c in res["cards"]:
-        out += ["", f"**{c['nickname']}**" + (" — facts older than 90 days, unverified" if c.get("facts_stale") else "")]
+        checked = f" — card terms checked {c['facts_checked_on']}" if c.get("facts_checked_on") else ""
+        out += ["", f"**{c['nickname']}**" + checked + (", older than 90 days: unverified" if c.get("facts_stale") else "")]
         if c.get("note"):
             out.append(c["note"])
             continue
@@ -638,6 +640,8 @@ def to_markdown(res):
             used = "—" if p["used"] is None else f"{sym}{p['used']:,.2f}"
             left = "—" if p["remaining"] is None else f"{sym}{p['remaining']:,.2f}"
             status = p["status"]
+            if b.get("fact_state") == "unverified":
+                status += f"; catalog fact unverified (checked {b.get('fact_checked_on')})"
             if b.get("enrollment_note") and "not confirmed" in b["enrollment_note"]:
                 status += "; enrollment not confirmed"
             if b.get("gated"):

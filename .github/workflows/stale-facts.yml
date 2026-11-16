@@ -1,0 +1,33 @@
+name: stale-facts
+# Weekly: one issue lists catalog facts older than 90 days or not yet confirmed on a primary page.
+# The finerd team owns it and clears it within 30 days (spec v2, «Keeping the catalog right»).
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  list:
+    runs-on: ubuntu-24.04
+    steps:
+      # Pinned by commit SHA (actions/checkout v4.2.2, actions/setup-python v5.3.0).
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b
+        with:
+          python-version: "3.9"
+      - run: python3 tools/stale_facts.py > stale.md
+      - name: Open or update the stale-list issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: "Catalog facts to re-check"
+        run: |
+          n=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number')
+          if grep -q "Nothing is stale." stale.md; then
+            if [ -n "$n" ]; then gh issue close "$n" --comment "Nothing is stale this week."; fi
+          elif [ -n "$n" ]; then
+            gh issue edit "$n" --body-file stale.md
+          else
+            gh issue create --title "$TITLE" --body-file stale.md
+          fi

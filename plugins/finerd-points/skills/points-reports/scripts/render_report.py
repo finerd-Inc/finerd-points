@@ -165,6 +165,9 @@ def credits_section(cr):
                if not (b.get("retired") and not b["current"])]  # older versions still count in the year
         cur = [(b, p) for b, p in cur if p]
         out.append(f"<h3>{E(c['nickname'])}</h3>")
+        if c.get("facts_checked_on"):
+            out.append(f"<p class='note'>Card terms checked {E(c['facts_checked_on'])}"
+                       f"{', older than 90 days: unverified' if c.get('facts_stale') else ''}.</p>")
         if c.get("coverage_note"):
             out.append(f"<p class='note'>{E(c['coverage_note'])}</p>")
         if not cur:
@@ -178,6 +181,8 @@ def credits_section(cr):
                 extra = " <span class='note'>enrollment not confirmed</span>"
             if b.get("counted_on_card"):
                 extra += " <span class='note'>shared allowance</span>"
+            if b.get("fact_state") == "unverified":
+                extra += f" <span class='note'>catalog fact unverified (checked {E(str(b.get('fact_checked_on')))})</span>"
             if b.get("gated"):
                 extra += f" <span class='note'>opens only after {E(b['requires'].get('note') or '')}</span>"
             if p.get("notes"):

@@ -246,11 +246,12 @@
       "shared_group": null,
       "effective_from": null,
       "effective_to": null,
-      "note": "Arrives as an emailed voucher that generally expires after 48 hours; not an ordinary statement credit.",
+      "note": "Arrives as an emailed voucher that generally expires after 48 hours; not an ordinary statement credit. Not yet confirmed on the issuer's own page: shown as unverified.",
       "sources": [
         "A2",
         "A3"
-      ]
+      ],
+      "unverified": true
     },
     {
       "id": "anniversary-status-points",
