@@ -87,6 +87,7 @@ date, and «unverified» after 90 days.
   need your answer.
 - Some banks restrict AI tools signing in on your behalf (Chase's agreement does). You can always
   download a statement or CSV yourself and give it to your AI instead.
+- The ledger folder works on macOS and Linux; Windows is not supported yet.
 - The ledger folder is on your computer: in Claude chat your computer must be connected and awake.
   Without it, the skills only show the last report or read a ledger you attach, and save nothing.
 - Status forecasts and «keep or cancel this card» come in a later version.
