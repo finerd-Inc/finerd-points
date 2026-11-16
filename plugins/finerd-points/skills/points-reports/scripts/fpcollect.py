@@ -40,6 +40,14 @@ PENDING_POST_DAYS = 10    # a pending row posts within this many days
 PENDING_TOLERANCE = 0.20  # posted amount within 20% of the pending one (tips)
 CROSS_DAYS = 3            # cross-source «probably the same» window
 DESC_LIMIT = 200
+# Text that speaks to an AI assistant rather than describing an account row. It is stored as data and
+# reported to the person (spec v2, appendix B «Untrusted content»); it never changes the task.
+ADDRESSES_AI = re.compile(
+    r"(?i)\b(ignore|disregard|forget)\b.{0,40}\b(instructions?|rules|previous|above)\b|"
+    r"\b(system|developer)\s+prompt\b|\byou\s+are\s+(now\s+)?(an?|the)\s+(ai|assistant|agent|model)\b|"
+    r"\b(ai|assistant|claude|chatgpt|gpt|agent)\s*[:,]\s*(please\s+)?(open|go|send|transfer|redeem|click|"
+    r"navigate|visit|email|forward|ignore|delete)\b|"
+    r"\b(open|visit|navigate to|go to)\s+https?://|\bsend\b.{0,40}\b(to|at)\b.{0,40}@")
 EVIDENCE_LIMIT = 300
 
 
@@ -448,7 +456,10 @@ def plan_read(led, read):
     matched = set()   # existing record ids accounted for by this read
     taken = set()     # indexes of rows accounted for
     summary = {"new": 0, "known": 0, "revised": 0, "possibly_same": 0, "not_shown": 0, "dropped_pending": 0,
-               "probably_same_other_source": 0}
+               "probably_same_other_source": 0,
+               "addressed_to_ai": [raw.get("description", "")[:120] for raw in read["rows"]
+                                   if ADDRESSES_AI.search(str(raw.get("description", "")) + " " +
+                                                          str((raw.get("evidence") or {}).get("text", "")))]}
 
     # 1. the site's own ids
     id_count = {}
