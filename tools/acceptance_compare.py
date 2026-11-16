@@ -40,6 +40,39 @@ def key(date, amount, desc, precision):
     return (date[:10], round(float(amount), precision), norm(desc))
 
 
+def match_rows(want, got):
+    """Largest one-to-one matching of reference rows to ledger rows (frozen 16 Nov 2026, before run 1).
+
+    A reference row is ([first, last], amount, name): the date the site shows, or the range it shows
+    for a stay. A ledger row matches when its amount is equal at the site's precision, its date lies in
+    that range, and the site's name (normalized) is part of its description; a reference row with no
+    name (the site shows only an amount) matches any description. Rows with a zero amount are left out
+    on both sides by the caller."""
+    def fits(w, g):
+        (lo, hi), amount, name = w
+        return g[1] == amount and lo <= g[0] <= hi and (not name or name in g[2])
+
+    owner = [None] * len(got)
+
+    def assign(i, seen):
+        for j, g in enumerate(got):
+            if j in seen or not fits(want[i], g):
+                continue
+            seen.add(j)
+            if owner[j] is None or assign(owner[j], seen):
+                owner[j] = i
+                return True
+        return False
+
+    matched = {i for i in range(len(want)) if assign(i, set())}
+    missing = sorted([w[0][0] if w[0][0] == w[0][1] else "..".join(w[0]), w[1], w[2]]
+                     for i, w in enumerate(want) if i not in matched)
+    extra = sorted(list(g) for j, g in enumerate(got) if owner[j] is None)
+    wording = sorted([got[j][0], got[j][1], got[j][2], want[i][2]] for j, i in enumerate(owner)
+                     if i is not None and want[i][2] and got[j][2] != want[i][2])
+    return missing, extra, wording
+
+
 def compare(led, ref):
     counted, _, prelim = fc.counted_records(led)
     out, ok = [], True
@@ -51,15 +84,19 @@ def compare(led, ref):
         res = {"account": name, "problems": []}
         lo, hi = acc["interval"]
         p = acc.get("precision", 0)
-        got = Counter(key(r["date"], r["amount"], r["description"], p) for r in counted
-                      if r["source"] == acc["source"] and r["account"] == acc["account"]
-                      and r["section"] == acc.get("section", "activity") and lo <= r["date"] <= hi)
-        want = Counter(key(d, a, t, p) for d, a, t in acc.get("rows", []))
-        missing, extra = want - got, got - want
+        got = [key(r["date"], r["amount"], r["description"], p) for r in counted
+               if r["source"] == acc["source"] and r["account"] == acc["account"]
+               and r["section"] == acc.get("section", "activity") and lo <= r["date"] <= hi
+               and round(float(r["amount"]), p) != 0]
+        want = [(d if isinstance(d, list) else [d, d], round(float(a), p), norm(t))
+                for d, a, t in acc.get("rows", []) if round(float(a), p) != 0]
+        missing, extra, wording = match_rows(want, got)
         if missing:
-            res["problems"].append({"missing_rows": sorted(missing.elements())})
+            res["problems"].append({"missing_rows": missing})
         if extra:
-            res["problems"].append({"extra_rows": sorted(extra.elements())})
+            res["problems"].append({"extra_rows": extra})
+        if wording:
+            res["wording_differs"] = wording   # information only: the site's name is inside the description
         cov = fc.coverage_state(led, acc["source"], acc["account"], acc.get("section", "activity"))
         if acc.get("rows") is not None and (not cov or cov["state"] != "complete"):
             res["problems"].append({"coverage": cov["state"] if cov else "none"})
