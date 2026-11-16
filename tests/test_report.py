@@ -204,3 +204,30 @@ class ReviewRound4Bridge(unittest.TestCase):
                          ["2026-11-01", "2026-11-16"])
         self.assertEqual(rp._latest_contiguous([["2026-01-01", "2026-06-30"], ["2026-07-01", "2026-11-16"]]),
                          ["2026-01-01", "2026-11-16"])
+
+
+class ReviewRound5Bridge(unittest.TestCase):
+
+    def test_legacy_credit_rows_count_beside_activity_once(self):
+        led = ReviewRound2Report()._gold()
+        led["records"].append({"id": "legacy-1", "source": "amex", "account": "gold-card", "section": "credits",
+                               "date": "2026-09-10", "amount": 25, "unit": "USD", "description": "AMEX RESY CREDIT",
+                               "status": "posted", "state": "active", "seq": 99, "seen_in": ["x"]})
+        led["records"].append({"id": "legacy-2", "source": "amex", "account": "gold-card", "section": "credits",
+                               "date": "2026-07-03", "amount": 25, "unit": "USD", "description": "AMEX RESY CREDIT",
+                               "status": "posted", "state": "active", "seq": 100, "seen_in": ["x"]})
+        self.assertEqual(ReviewRound2Report()._resy(led)["used"], 50.0)  # Sep (once, also in activity) + Jul
+
+    def test_a_source_named_legacy_is_ordinary(self):
+        led = fl.new_ledger("Rad", storage="folder")
+        b = [{"op": "add_card", "id": "c", "person": "me", "nickname": "C"},
+             {"op": "add_inventory", "id": "c", "kind": "card", "label": "C", "person": "me"},
+             {"op": "add_source", "id": "legacy", "kind": "bank_card", "name": "Legacy Bank", "unit": "USD",
+              "accounts": [{"id": "a", "label": "A", "person": "me", "unit": "USD", "inventory": "c"}]}]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        rd = {"source": "legacy", "account": "a", "section": "activity", "read_id": "r", "requested": ["2026-01-01",
+              "2026-11-16"], "covered": None, "state": "partial", "read_at": "2026-11-16T00:00:00Z", "unit": "USD",
+              "rows": [{"date": "2026-05-01", "amount": -10, "description": "x", "status": "posted"}]}
+        bb, _ = fc.plan_read(led, rd)
+        fl.apply_batch(led, bb, fl.preview_batch(led, bb)[0])
+        report.build(led, TODAY)  # no exception

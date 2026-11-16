@@ -129,13 +129,17 @@ def ledger_transactions(led):
     accounts, txns = {}, []
     rows_of = {}
     for r in counted:
-        if r["section"] == "activity":  # issuer benefit trackers are observations, not rows: never counted twice
+        if r["section"] == "activity":
             rows_of.setdefault((r["source"], r["account"]), []).append(r)
-    for r in counted:  # rows kept under «credits» by a pre-release build: used only where no activity exists
-        if r["section"] == "credits" and (r["source"], r["account"]) not in rows_of:
-            rows_of.setdefault(("legacy", r["source"], r["account"]), []).append(r)
-    for k in [k for k in rows_of if k[0] == "legacy"]:
-        rows_of[(k[1], k[2])] = rows_of.pop(k)
+    # Rows a pre-release build kept under «credits» count like activity, except where the same row (date,
+    # signed amount, description) is already in that account's activity: never dropped, never counted twice.
+    for r in counted:
+        if r["section"] == "credits":
+            same = [x for x in rows_of.get((r["source"], r["account"]), []) if x["section"] == "activity"
+                    and x["date"] == r["date"] and x["amount"] == r["amount"]
+                    and fc.norm_desc(x["description"]) == fc.norm_desc(r["description"])]
+            if not same:
+                rows_of.setdefault((r["source"], r["account"]), []).append(r)
     # Only a card's own site or statements count as its transactions, never an aggregator. All of them are used:
     # rows the same event produced in two of them are one event group, of which counted_records keeps one.
     per_card = {}
