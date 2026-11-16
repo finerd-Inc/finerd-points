@@ -23,7 +23,7 @@ PLUGIN = ROOT / "plugins" / "finerd-points"
 SKILLS = PLUGIN / "skills"
 
 # What each skill gets. scripts = shared/lib modules; facts = whole catalog; refs = shared/references.
-STORE = ["fpstore.py", "fp_commit.sh"]  # every skill that writes the ledger carries the commit script
+STORE = ["fpstore.py", "fp_commit.sh", "fpcollect.py"]  # every skill with ledger.py writes through bin/commit
 PLAN = {
     "points":         {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "balances.py"] + STORE,
                        "facts": True, "refs": True},
@@ -34,7 +34,7 @@ PLAN = {
                        "facts": True, "refs": True},
     "balances":       {"scripts": ["fpledger.py", "ledger.py", "balances.py"] + STORE, "facts": False, "refs": True},
     "points-reports": {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py", "yir.py",
-                                   "balances.py", "spend.py", "render_report.py"],
+                                   "balances.py", "spend.py", "render_report.py"] + STORE,
                        "facts": True, "refs": True, "extra_refs": ["year-in-review-formula.md"],
                        "assets": True},
     "facts-check":    {"scripts": ["fpfacts.py"], "tools": ["check_facts.py"], "facts": True, "refs": False},

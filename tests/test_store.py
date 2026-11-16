@@ -349,3 +349,74 @@ class FolderChoice(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ChatPath(unittest.TestCase):
+    """A chat works on a copy of ledger.json and publishes through the same bin/commit on the computer."""
+
+    def _cli(self, *args):
+        p = subprocess.run([sys.executable, str(ROOT / "shared" / "lib" / "ledger.py"), *args], capture_output=True,
+                           text=True)
+        return p.returncode, (json.loads(p.stdout) if p.stdout.strip().startswith("{") else p.stdout)
+
+    def _chat_commit(self, root, sandbox, batch_rows):
+        copy = sandbox / "ledger.json"
+        copy.write_bytes((root / "ledger.json").read_bytes())          # device_stage_files
+        bh = sha_file(root / "ledger.json")                           # device_bash: shasum -a 256 ledger.json
+        batch = sandbox / "batch.json"
+        batch.write_text(json.dumps(batch_rows))
+        code, prev = self._cli("preview", "--ledger", str(copy), "--batch", str(batch), "--save",
+                               str(sandbox / "seen.json"), "--json")
+        self.assertEqual(code, 0, prev)
+        return copy, bh, batch, prev["hash"]
+
+    def _deliver_and_run(self, root, sandbox, copy, bh, batch, h):
+        outbox = sandbox / "outbox"
+        code, prep = self._cli("chat-prepare", "--ledger", str(copy), "--base-hash", bh, "--batch", str(batch),
+                               "--confirm", h, "--seen", str(sandbox / "seen.json"), "--out", str(outbox))
+        self.assertEqual((code, prep["result"]), (0, "prepared"), prep)
+        for name in prep["deliver_into_work"]:                         # device_commit_files, new names only
+            dst = root / "work" / name
+            self.assertFalse(dst.exists())
+            dst.write_bytes((outbox / name).read_bytes())
+        return sh(root, *prep["commit_args"])                          # device_bash
+
+    def test_chat_publishes_through_bin_commit(self):
+        with Folder() as root, tempfile.TemporaryDirectory() as sb:
+            first_ledger(root)
+            sandbox = Path(sb)
+            copy, bh, batch, h = self._chat_commit(root, sandbox, card("chat"))
+            code, out = self._deliver_and_run(root, sandbox, copy, bh, batch, h)
+            self.assertEqual((code, out["result"]), (0, "committed"), out)
+            led, _, bv = st.read(root)
+            self.assertEqual((bv, [c["id"] for c in led["cards"]]), (2, ["cchat"]))
+            self.assertEqual(led["commits"][-1]["writer"], "chat")
+
+    def test_local_write_after_chat_read_refuses_the_chat(self):
+        with Folder() as root, tempfile.TemporaryDirectory() as sb:
+            first_ledger(root)
+            sandbox = Path(sb)
+            copy, bh, batch, h = self._chat_commit(root, sandbox, card("chat"))
+            led, lbh, lbv = st.read(root)                              # Claude Code writes meanwhile
+            fl.apply_batch(led, card("local"), fl.preview_batch(led, card("local"))[0])
+            self.assertEqual(st.publish(root, led, lbh, lbv)["result"], "committed")
+            code, out = self._deliver_and_run(root, sandbox, copy, bh, batch, h)
+            self.assertEqual(code, 10, out)
+            # the chat brings the new ledger in and publishes the same batch, which still reads the same
+            copy.write_bytes((root / "ledger.json").read_bytes())
+            code, out = self._deliver_and_run(root, sandbox, copy, sha_file(root / "ledger.json"), batch, h)
+            self.assertEqual((code, out["result"]), (0, "committed"), out)
+            self.assertEqual(sorted(c["id"] for c in st.read(root)[0]["cards"]), ["cchat", "clocal"])
+            self.assertEqual(st.check(root)["chain"], "ok 3")
+
+    def test_chat_write_after_local_read_refuses_the_local_writer(self):
+        with Folder() as root, tempfile.TemporaryDirectory() as sb:
+            first_ledger(root)
+            led, lbh, lbv = st.read(root)                              # Claude Code reads first
+            sandbox = Path(sb)
+            copy, bh, batch, h = self._chat_commit(root, sandbox, card("chat"))
+            code, out = self._deliver_and_run(root, sandbox, copy, bh, batch, h)
+            self.assertEqual(code, 0, out)
+            fl.apply_batch(led, card("local"), fl.preview_batch(led, card("local"))[0])
+            res = st.publish(root, led, lbh, lbv)
+            self.assertEqual((res["result"], res["code"]), ("refused", "10"))

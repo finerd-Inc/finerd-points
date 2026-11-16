@@ -618,7 +618,7 @@ REDEMPTION_STATUS = ("booked", "cancelled", "cancelled_with_fee")
 SETTINGS_KEYS = ("foregone_cashback_rate", "foregone_cashback_exclusions", "calendar_min_value",
                  "reminder_days_before", "stale_after_days", "credit_values")
 SETUP_KEYS = ("storage", "location", "calendar_id", "timezone", "household_mode", "report_currency",
-              "finance_app", "first_run_notice_shown")
+              "finance_app", "first_run_notice_shown", "history_from")
 # Keys a destination must echo back before a write counts as confirmed.
 READBACK_KEYS = {
     "calendar": ("title", "date", "reminder_minutes", "visibility"),
@@ -657,8 +657,28 @@ def _check_value(op, i, k):
         raise LedgerError(f"Step {i + 1}: last4 must be exactly four digits.")
 
 
+EXTRA_OPS = {}  # name → {"check", "apply", "describe"}; schema-2 operations register here (fpcollect.py)
+
+
+def register_op(name, required, allowed, check, apply, describe):
+    REQUIRED[name] = tuple(required)
+    ALLOWED[name] = set(allowed)
+    EXTRA_OPS[name] = {"check": check, "apply": apply, "describe": describe}
+
+
 def _check_op(led, op, i, staged_ids):
     kind = op.get("op") if isinstance(op, dict) else None
+    if kind in EXTRA_OPS:
+        missing = [k for k in REQUIRED[kind] if op.get(k) in (None, "")]
+        if missing:
+            raise LedgerError(f"Step {i + 1} ({kind}): missing {', '.join(missing)}.")
+        unknown = sorted(set(op) - ALLOWED[kind] - {"op"})
+        if unknown:
+            raise LedgerError(f"Step {i + 1} ({kind}): unknown field(s) {', '.join(unknown)}.")
+        if _secret_keys(op):
+            raise LedgerError(f"Step {i + 1} ({kind}): passwords, codes, keys and ID numbers are never stored.")
+        EXTRA_OPS[kind]["check"](led, op, i, staged_ids)
+        return
     if kind not in REQUIRED:
         raise LedgerError(f"Step {i + 1}: unknown operation {kind!r}.")
     missing = [k for k in REQUIRED[kind] if op.get(k) in (None, "")]
@@ -855,7 +875,8 @@ def preview_batch(led, batch):
     groups = {}
     for op in batch:
         dest = "this ledger" if op["op"] != "external" else (op.get("app") or op["target"])
-        groups.setdefault(dest, []).append(_describe(led, op))
+        text = EXTRA_OPS[op["op"]]["describe"](led, op) if op["op"] in EXTRA_OPS else _describe(led, op)
+        groups.setdefault(dest, []).append(text)
     lines = [f"Planned changes (ledger version {led['version']}):"]
     for dest, items in groups.items():
         lines.append(f"\nIn {dest}:")
@@ -881,6 +902,9 @@ def apply_batch(led, batch, confirm_hash, session=None, now=None):
     results = []
     for op in batch:
         k = op["op"]
+        if k in EXTRA_OPS:
+            results.append(EXTRA_OPS[k]["apply"](led, op, ts))
+            continue
         if k in RECORD_OPS:
             rec = {key: val for key, val in op.items() if key != "op"}
             rec["added_at"] = ts

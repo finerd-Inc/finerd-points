@@ -21,6 +21,7 @@ import subprocess
 from pathlib import Path
 
 import fpledger as fl
+import fpcollect  # noqa: F401  (registers the schema-2 operations)
 
 PROTOCOL = 1
 SCRIPT = Path(__file__).resolve().with_name("fp_commit.sh")
