@@ -52,6 +52,9 @@ TARGETS = {"github": None, "claude-directory": "claude", "chatgpt": "chatgpt"}
 LEGAL_TEXTS = {"TERMS.md", "PRIVACY.md"}
 ALLOWED_SUFFIXES = {".md", ".py", ".json", ".sh", ".css", ".png"}
 PNG_ALLOWED = {"assets/icon.png"}
+# The one image ships only as reviewed: any change to the icon must change this hash in a reviewed pull request
+# (a valid PNG can still carry other data inside its own chunks).
+ICON_SHA256 = "baf436bdf18794b52c34411a5aa257e2b52a215001470f63ce6ce039339b10b1"
 GITHUB_ONLY = re.compile(r"\n?<!-- github-build-only:start -->.*?<!-- github-build-only:end -->\n?", re.S)
 SKIP = {"__pycache__", ".DS_Store"}
 
@@ -153,8 +156,9 @@ def check():
                 problems.append(f"shared/{sub}/{p.relative_to(SHARED / sub)}: only {', '.join(sorted(allowed))} "
                                 f"files belong in shared/{sub}")
     icon = PLUGIN / "assets" / "icon.png"
-    if icon.exists() and not png_ok(icon.read_bytes()):
-        problems.append("plugins/finerd-points/assets/icon.png is not a plain PNG (extra chunks or trailing data)")
+    if icon.exists() and (not png_ok(icon.read_bytes()) or hashlib.sha256(icon.read_bytes()).hexdigest() != ICON_SHA256):
+        problems.append("plugins/finerd-points/assets/icon.png is not the reviewed icon (its hash is pinned in "
+                        "tools/build.py; change both in one reviewed pull request)")
     for f in ROOT_COPIES:
         if not (PLUGIN / f).exists() or not filecmp.cmp(ROOT / f, PLUGIN / f, shallow=False):
             problems.append(f"plugins/finerd-points/{f} differs from {f}")
@@ -227,7 +231,8 @@ def package(target):
                     continue
             if p.suffix not in ALLOWED_SUFFIXES and p.name not in ("LICENSE", "NOTICE"):
                 sys.exit(f"The {target} build may not carry {rel} (only {', '.join(sorted(ALLOWED_SUFFIXES))})")
-            if p.suffix == ".png" and (str(rel) not in PNG_ALLOWED or not png_ok(p.read_bytes())):
+            if p.suffix == ".png" and (str(rel) not in PNG_ALLOWED or not png_ok(p.read_bytes())
+                                       or hashlib.sha256(p.read_bytes()).hexdigest() != ICON_SHA256):
                 sys.exit(f"The {target} build may not carry {rel}: the only image is the PNG icon")
             data = p.read_bytes()
             if directory is not None and p.suffix == ".md":

@@ -772,7 +772,16 @@ def counted_records(led):
             continue
         direct = [r for r in live if kinds.get(r["source"]) != "aggregator"] or live
         if g in undecided:
-            keep = min(direct, key=_order)
+            # the value the person last confirmed stays counted while a newer link waits: rows joined by a link
+            # decided «same» count by the row a site still shows; with no decision yet, the earliest row
+            decided = {x for ev in led.get("events", []) if ev.get("kind") == "link" and ev.get("state") == "same"
+                       for x in ev["records"] if group_of.get(x) == g}
+            confirmed = [r for r in direct if r["id"] in decided]
+            if confirmed:
+                shown = [r for r in confirmed if not r.get("not_shown")] or confirmed
+                keep = max(shown, key=_order)
+            else:
+                keep = min(direct, key=_order)
             for r in live:
                 prelim.add((r["source"], r["account"]))
         else:

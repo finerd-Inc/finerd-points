@@ -194,3 +194,13 @@ class ReviewRound3Bridge(unittest.TestCase):
         bb, _ = fc.plan_read(led, rd)
         fl.apply_batch(led, bb, fl.preview_batch(led, bb)[0])
         self.assertEqual(ReviewRound2Report()._resy(led)["used"], 25.0)
+
+
+class ReviewRound4Bridge(unittest.TestCase):
+
+    def test_statements_with_a_gap_claim_only_the_latest_contiguous_span(self):
+        import report as rp
+        self.assertEqual(rp._latest_contiguous([["2026-01-01", "2026-01-31"], ["2026-11-01", "2026-11-16"]]),
+                         ["2026-11-01", "2026-11-16"])
+        self.assertEqual(rp._latest_contiguous([["2026-01-01", "2026-06-30"], ["2026-07-01", "2026-11-16"]]),
+                         ["2026-01-01", "2026-11-16"])

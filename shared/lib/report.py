@@ -99,6 +99,24 @@ def _kind(desc, direction):
     return "refund"
 
 
+def _merge(intervals):
+    """Merge [from, to] date intervals that touch or overlap (a gap of one day or more stays a gap)."""
+    import datetime as _dt
+    out = []
+    for f, t in sorted(intervals):
+        if out and _dt.date.fromisoformat(f) <= _dt.date.fromisoformat(out[-1][1]) + _dt.timedelta(days=1):
+            out[-1][1] = max(out[-1][1], t)
+        else:
+            out.append([f, t])
+    return out
+
+
+def _latest_contiguous(intervals):
+    """The merged complete interval that reaches latest: coverage is only claimed where it has no gap."""
+    m = _merge(intervals)
+    return m[-1] if m else None
+
+
 def ledger_transactions(led):
     """Appendix D bridge: counted rows a card's own site showed (money, not points) become transactions in the
     normalized contract, so credits are computed with no finance app. A source account belongs to a card when
@@ -113,6 +131,11 @@ def ledger_transactions(led):
     for r in counted:
         if r["section"] == "activity":  # issuer benefit trackers are observations, not rows: never counted twice
             rows_of.setdefault((r["source"], r["account"]), []).append(r)
+    for r in counted:  # rows kept under «credits» by a pre-release build: used only where no activity exists
+        if r["section"] == "credits" and (r["source"], r["account"]) not in rows_of:
+            rows_of.setdefault(("legacy", r["source"], r["account"]), []).append(r)
+    for k in [k for k in rows_of if k[0] == "legacy"]:
+        rows_of[(k[1], k[2])] = rows_of.pop(k)
     # Only a card's own site or statements count as its transactions, never an aggregator. All of them are used:
     # rows the same event produced in two of them are one event group, of which counted_records keeps one.
     per_card = {}
@@ -132,14 +155,19 @@ def ledger_transactions(led):
         card["finance_link"] = {"app": "ledger", "account_id": aid, "account_name": card.get("nickname") or card_id}
         covs = [fc.coverage_state(led, s_["id"], a["id"], "activity") for s_, a, _ in parts]
         full = [c["covered"] for c in covs if c and c["state"] == "complete" and c.get("covered")]
-        anyc = [c["covered"] for c in covs if c and c.get("covered")]
-        span = full or anyc
-        accounts[aid] = {"account_id": aid, "name": card.get("nickname") or card_id,
-                         "coverage": {"from": min(x[0] for x in span), "to": max(x[1] for x in span)} if span
-                         else {"from": None, "to": None},
-                         "complete": bool(full),
-                         "coverage_note": None if full else "The card's own site was not read completely.",
-                         "scope": "filtered"}
+        span = _latest_contiguous(full)
+        partial = [c["covered"] for c in covs if c and c.get("covered")]
+        if span:
+            cov = {"from": span[0], "to": span[1]}
+            note = None if len(_merge(full)) == 1 else (f"Complete only from {span[0]} to {span[1]}; earlier "
+                                                         f"periods have gaps between the statements read.")
+        elif partial:
+            cov = {"from": min(x[0] for x in partial), "to": max(x[1] for x in partial)}
+            note = "The card's own site was not read completely."
+        else:
+            cov, note = {"from": None, "to": None}, "The card's own site was not read completely."
+        accounts[aid] = {"account_id": aid, "name": card.get("nickname") or card_id, "coverage": cov,
+                         "complete": bool(span), "coverage_note": note, "scope": "filtered"}
         for s_, a, unit in parts:
             for r in rows_of[(s_["id"], a["id"])]:
                 direction = "credit" if r["amount"] > 0 else "debit"

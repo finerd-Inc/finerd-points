@@ -401,3 +401,16 @@ class ReviewRound3Identity(unittest.TestCase):
               "status": "posted", "evidence": {"text": "x", "where": "", "method": "text"}}]
         with self.assertRaises(fl.LedgerError):
             fl.preview_batch(led, b)
+
+
+class ReviewRound4Identity(unittest.TestCase):
+
+    def test_a_confirmed_correction_stays_counted_while_a_newer_one_waits(self):
+        led = base_ledger()
+        read(led, [row("2026-10-01", 100, "SHOPPING")], ["2026-09-01", "2026-11-16"])
+        read(led, [row("2026-10-01", 110, "SHOPPING")], ["2026-09-01", "2026-11-16"])
+        b = [{"op": "resolve_link", "link": ev["id"], "decision": "same"} for ev in led["events"]]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        self.assertEqual(total(led)[0], 110)
+        read(led, [row("2026-10-01", 120, "SHOPPING")], ["2026-09-01", "2026-11-16"])
+        self.assertEqual(total(led)[0], 110)  # not back to 100
