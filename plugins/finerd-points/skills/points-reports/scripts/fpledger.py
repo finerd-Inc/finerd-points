@@ -37,13 +37,17 @@ import tempfile
 from pathlib import Path
 
 FORMAT = "finerd-points-ledger"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 LEASE_MINUTES = 30
 
 COLLECTIONS = (
     "people", "cards", "accounts", "observations", "corrections", "redemptions",
     "costs", "certificates", "signup_offers", "calendar_events", "oplog",
+    # schema 2 (spec v2, appendix D)
+    "inventory", "sources", "records", "events", "commits",
 )
+V2_COLLECTIONS = ("inventory", "sources", "records", "events", "commits")
+RECORD_KEY = {"oplog": "op_id", "commits": "commit_id"}
 
 # Source order per field: earlier = stronger evidence (spec «Why the numbers can be trusted»).
 SOURCE_ORDER = {
@@ -256,7 +260,7 @@ def validate(led):
             raise LedgerError(f"The ledger is missing its {c} list.")
     ids = set()
     for c in COLLECTIONS:
-        key = "op_id" if c == "oplog" else "id"
+        key = RECORD_KEY.get(c, "id")
         for rec in led[c]:
             rid = rec.get(key) if isinstance(rec, dict) else None
             if not rid:
@@ -270,34 +274,114 @@ def validate(led):
 
 
 def migrate(led):
-    """Forward-only schema migrations. Returns (ledger, migrated?)."""
+    """Forward-only schema migrations, in memory. Returns (ledger, migrated?). The version the migration
+    replaces is kept by bin/commit's backup when the migrated ledger is first published (spec v2, appendix D)."""
     v = led.get("schema_version")
     if v == SCHEMA_VERSION:
         return led, False
+    if v == 1:
+        for c in V2_COLLECTIONS:
+            led.setdefault(c, [])
+        led["schema_version"] = 2
+        led.setdefault("_meta", {}).setdefault("migrations", []).append({"from": 1, "to": 2, "at": iso(now_utc())})
+        return led, True
     raise LedgerError(f"No migration path from schema {v} to {SCHEMA_VERSION}.")
+
+
+def loads(text):
+    """Parse, migrate and validate a ledger. Free text never makes loading fail (spec v2, appendix C): run
+    `forbidden_report` to show the person anything that should not be there."""
+    try:
+        led = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise LedgerError(f"The ledger file is damaged (invalid JSON at line {e.lineno}).")
+    if not isinstance(led, dict):
+        raise LedgerError("This file is not a finerd points ledger.")
+    if isinstance(led.get("schema_version"), int) and led["schema_version"] > SCHEMA_VERSION:
+        validate(led)  # raises the «newer finerd points» message
+    led, _ = migrate(led)
+    validate(led)
+    keys = _secret_keys({**{k: led[k] for k in COLLECTIONS}, "_meta": led["_meta"]})
+    if keys:
+        raise LedgerError(f"This ledger file has field(s) named {', '.join(sorted(keys))} with values in them. "
+                          f"finerd points never keeps passwords, codes, keys or ID numbers; remove those fields "
+                          f"from the file before using it.")
+    return led
+
+
+def _secret_keys(obj):
+    """Structured fields that may only exist empty (password, card_number…). Free text is not checked here."""
+    found = set()
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if SECRET_KEYS.match(str(k)) and v not in (None, "", False):
+                found.add(str(k))
+            found |= _secret_keys(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            found |= _secret_keys(v)
+    return found
 
 
 def load(path):
     p = Path(path)
     try:
-        led = json.loads(p.read_text(encoding="utf-8"))
+        text = p.read_text(encoding="utf-8")
     except FileNotFoundError:
         raise LedgerError(f"No ledger at {p}. Ask the person for their ledger file or setup record; "
                           f"never create a second ledger without asking.")
-    except json.JSONDecodeError as e:
-        raise LedgerError(f"The ledger file is damaged (invalid JSON at line {e.lineno}).")
-    if not isinstance(led, dict):
-        raise LedgerError("This file is not a finerd points ledger.")
-    led, migrated = migrate(led)
-    if migrated:
-        backup = p.with_suffix(p.suffix + f".v{led['version']}.bak")
-        backup.write_text(p.read_text(encoding="utf-8"), encoding="utf-8")
-    validate(led)
-    bad = scan_forbidden({**{k: led[k] for k in COLLECTIONS}, "_meta": led["_meta"]})
+    return loads(text)
+
+
+def forbidden_report(led):
+    """Where the ledger holds something finerd points never keeps: [(collection, record id, kinds)]."""
+    out = []
+    for c in COLLECTIONS:
+        key = RECORD_KEY.get(c, "id")
+        for rec in led.get(c, []):
+            bad = scan_forbidden(rec)
+            if bad:
+                out.append((c, rec.get(key), bad))
+    bad = scan_forbidden(led.get("_meta", {}))
     if bad:
-        raise LedgerError(f"This ledger file contains {', '.join(bad)}. Remove it from the file before using it; "
-                          f"finerd points never keeps such data.")
-    return led
+        out.append(("_meta", None, bad))
+    return out
+
+
+CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
+MARKUP = re.compile(r"<[^>]{0,200}>|\[([^\]]{0,200})\]\([^)]{0,500}\)|```|`")
+
+
+def redact_text(text):
+    """Remove what must never be stored from free text. Returns (clean text, kinds removed)."""
+    kinds = set()
+    for rx, why in SECRET_TEXT:
+        if rx.search(text):
+            kinds.add(why)
+            text = rx.sub("[removed]", text)
+
+    def card(m):
+        raw = m.group(0)
+        digits = re.sub(r"\D", "", raw)
+        if not DATE_INSIDE.search(raw) and 13 <= len(digits) <= 19 and len(set(digits)) > 1 and _luhn_ok(digits):
+            kinds.add("a full card number")
+            return "[removed]"
+        return raw
+    text = CARD_CANDIDATE.sub(card, text)
+    return text, sorted(kinds)
+
+
+def clean_text(text, limit=300):
+    """Free text from pages, emails, files or the person, as stored: control characters and markup removed,
+    identifiers redacted, whitespace collapsed, length capped (spec v2, appendix B «Untrusted content»)."""
+    if text is None:
+        return ""
+    text = str(text)
+    text = CONTROL.sub(" ", text)
+    text = MARKUP.sub(lambda m: m.group(1) or " ", text)
+    text, _ = redact_text(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:limit]
 
 
 class _Lock:
@@ -782,11 +866,14 @@ def preview_batch(led, batch):
     return h, "\n".join(lines)
 
 
-def apply_batch(led, batch, confirm_hash, session, now=None):
+def apply_batch(led, batch, confirm_hash, session=None, now=None):
     """Apply a previewed batch to the in-memory ledger. Returns a list of results.
     External operations are only recorded as planned; the skill performs them
-    through the person's connector and then records sent/confirmed."""
-    require_lease(led, session, now)
+    through the person's connector and then records sent/confirmed.
+    A ledger in a folder is guarded by bin/commit (lock and base hash), so it needs no lease;
+    a ledger file still needs the v1 writer lease."""
+    if led["_meta"]["setup"].get("storage") != "folder":
+        require_lease(led, session, now)
     h, _ = preview_batch(led, batch)
     if confirm_hash != h:
         raise LedgerError("This batch is not the one the person saw (hash mismatch). Show the preview again.")
@@ -893,8 +980,9 @@ def _readback_problems(op, read_back, destination_id):
     return probs
 
 
-def set_op_state(led, op_id, state, session, destination_id=None, read_back=None, error=None, now=None):
-    require_lease(led, session, now)
+def set_op_state(led, op_id, state, session=None, destination_id=None, read_back=None, error=None, now=None):
+    if led["_meta"]["setup"].get("storage") != "folder":
+        require_lease(led, session, now)
     if state not in OP_STATES:
         raise LedgerError(f"State must be one of {', '.join(OP_STATES)}.")
     op = next((x for x in led["oplog"] if x["op_id"] == op_id), None)
@@ -1047,8 +1135,9 @@ def redaction_plan(led, person_id):
     return h, plan, "\n".join(text)
 
 
-def redact_person(led, person_id, confirm_hash, session, now=None):
-    require_lease(led, session, now)
+def redact_person(led, person_id, confirm_hash, session=None, now=None):
+    if led["_meta"]["setup"].get("storage") != "folder":
+        require_lease(led, session, now)
     h, plan, _ = redaction_plan(led, person_id)
     if h != confirm_hash:
         raise LedgerError("This is not the removal the person saw (hash mismatch). Show the plan again.")

@@ -23,15 +23,16 @@ PLUGIN = ROOT / "plugins" / "finerd-points"
 SKILLS = PLUGIN / "skills"
 
 # What each skill gets. scripts = shared/lib modules; facts = whole catalog; refs = shared/references.
+STORE = ["fpstore.py", "fp_commit.sh"]  # every skill that writes the ledger carries the commit script
 PLAN = {
-    "points":         {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "balances.py"],
+    "points":         {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "balances.py"] + STORE,
                        "facts": True, "refs": True},
-    "card-credits":   {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py"],
+    "card-credits":   {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py"] + STORE,
                        "facts": True, "refs": True},
     "expirations":    {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py",
-                                   "expirations.py"],
+                                   "expirations.py"] + STORE,
                        "facts": True, "refs": True},
-    "balances":       {"scripts": ["fpledger.py", "ledger.py", "balances.py"], "facts": False, "refs": True},
+    "balances":       {"scripts": ["fpledger.py", "ledger.py", "balances.py"] + STORE, "facts": False, "refs": True},
     "points-reports": {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py", "yir.py",
                                    "balances.py", "spend.py", "render_report.py"],
                        "facts": True, "refs": True, "extra_refs": ["year-in-review-formula.md"],
