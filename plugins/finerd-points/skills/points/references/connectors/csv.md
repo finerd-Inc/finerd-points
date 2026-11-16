@@ -6,5 +6,6 @@
 
 - Check the sign on one known purchase before choosing `--negative-is`; US-style dates need
   `--date-format %m/%d/%Y`.
-- Remove card numbers and account numbers from the file before reading it.
+- `normalize.py` keeps only date, description, amount and currency; it never copies other columns. If the
+  file has full card or account numbers in the description itself, ask the person to remove them first.
 - Coverage is the export's date range; say so if the export may be partial.

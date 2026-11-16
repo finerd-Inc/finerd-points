@@ -630,3 +630,86 @@ class ReviewRound2Store(unittest.TestCase):
             st.publish(root, led, bh, bv)
             st.scrub_pending_redactions(root)
             self.assertNotIn("anna", (root / "work" / "done-batch-anna.json").read_text())
+
+
+class ReviewRound3Store(unittest.TestCase):
+
+    def test_unicode_escaped_commit_is_found_through_its_hash(self):
+        with Folder() as root:
+            first_ledger(root)
+            led, bh, bv = st.read(root)
+            op = "abcdef12-0001"
+            cand = st.prepare_candidate(led, bv, op, "x")
+            text = json.dumps(cand, indent=1).replace(f'"{op}"', '"\\u0061bcdef12-0001"')
+            (root / "ledger.json").write_text(text)
+            nh = sha_file(root / "ledger.json")
+            (root / "journal" / f"{op}.json").write_text(
+                '{\n  "op_id": "%s",\n  "base_version": %d,\n  "base_hash": "%s",\n  "new_hash": "%s",\n'
+                '  "state": "planned"\n}\n' % (op, bv, bh, nh))
+            self.assertIn(f"{op} committed", st.check(root)["recovered"])
+
+    def test_one_guard_release_at_a_time(self):
+        with Folder() as root:
+            first_ledger(root)
+            (root / ".lock-release").mkdir()
+            code, out = sh(root, "release-guard")
+            self.assertEqual(code, 14, out)
+
+    def test_icon_with_appended_payload_is_refused(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import build
+        icon = (ROOT / "plugins" / "finerd-points" / "assets" / "icon.png").read_bytes()
+        self.assertTrue(build.png_ok(icon))
+        self.assertFalse(build.png_ok(icon + b"PK\x03\x04payload"))
+
+
+class ChatSetupAndOps(unittest.TestCase):
+
+    def _cli(self, *args):
+        p = subprocess.run([sys.executable, str(ROOT / "shared" / "lib" / "ledger.py"), *args], capture_output=True,
+                           text=True)
+        return p.returncode, (json.loads(p.stdout) if p.stdout.strip().startswith("{") else p.stdout)
+
+    def test_chat_creates_the_first_ledger_and_records_an_op_outcome(self):
+        with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as sb:
+            root = Path(d, "finerd points")
+            root.mkdir()
+            for sub in st.SUBDIRS:
+                (root / sub).mkdir()
+            (root / "bin" / "commit").write_bytes(st.SCRIPT.read_bytes())   # delivered by the chat
+            code, prep = self._cli("chat-setup", "--name", "T", "--location", str(root), "--out", str(Path(sb, "o1")))
+            self.assertEqual(code, 0, prep)
+            for n in prep["deliver_into_work"]:
+                (root / "work" / n).write_bytes(Path(sb, "o1", n).read_bytes())
+            code, out = sh(root, *prep["commit_args"])
+            self.assertEqual((code, out["result"]), (0, "committed"), out)
+            # plan an external write, then record its outcome from the chat
+            led, bh, bv = st.read(root)
+            b = [{"op": "external", "target": "calendar", "action": "create", "app": "calendar",
+                  "summary": "Deadline", "payload": {"title": "Credits ending", "date": "2026-12-31",
+                                                     "reminder_minutes": 4320, "visibility": "private"}}]
+            fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+            self.assertEqual(st.publish(root, led, bh, bv)["result"], "committed")
+            led, bh, bv = st.read(root)
+            op = led["oplog"][0]["op_id"]
+            copy = Path(sb, "ledger.json")
+            copy.write_bytes((root / "ledger.json").read_bytes())
+            code, prep = self._cli("chat-op", "--ledger", str(copy), "--base-hash", bh, "--op-id", op, "--state",
+                                   "sent", "--out", str(Path(sb, "o2")))
+            self.assertEqual(code, 0, prep)
+            for n in prep["deliver_into_work"]:
+                (root / "work" / n).write_bytes(Path(sb, "o2", n).read_bytes())
+            code, out = sh(root, *prep["commit_args"])
+            self.assertEqual(code, 0, out)
+            self.assertEqual(st.read(root)[0]["oplog"][0]["state"], "sent")
+
+    def test_removal_plans_calendar_clearing_in_the_same_commit(self):
+        led = fl.new_ledger("T", storage="folder")
+        b = [{"op": "add_person", "id": "anna", "name": "Anna", "consent": {"given": True, "on": "2026-11-16"}},
+             {"op": "add_card", "id": "anna-card", "person": "anna", "nickname": "Anna card"}]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        led["calendar_events"].append({"id": "ev1", "event_id": "ev1", "subject": "card:anna-card",
+                                       "title": "Anna credit", "calendar_id": "c"})
+        h, _, _ = fl.redaction_plan(led, "anna")
+        fl.redact_person(led, "anna", h)
+        self.assertEqual([x["state"] for x in fl.pending_ops(led)], ["planned"])

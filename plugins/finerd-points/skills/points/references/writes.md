@@ -29,8 +29,14 @@
      --batch <file> --confirm <batch hash> --seen seen.json --out outbox`;
    - deliver the three outbox files into `<folder>/work/` under their own names (never overwrite a
      file), then run on the computer the command `chat-prepare` printed and read its `RESULT` line;
-   - `RESULT=refused CODE=10` means another conversation wrote first: bring `ledger.json` in again
-     and repeat `chat-prepare` with the same batch; if it answers `needs_preview`, show the new text.
+   - `RESULT=refused CODE=10` means another conversation wrote first: rename the delivered files to
+     `done-<name>` on the computer, bring `ledger.json` in again and repeat `chat-prepare` with the same
+     batch; if it answers `needs_preview`, show the new text.
+   - the outcome of a write into another app (step 7): `ledger.py chat-op --ledger ledger.json --base-hash
+     <hash> --op-id <op> --state sent|confirmed|unknown|failed [--destination-id … --read-back '…'] --out
+     outbox`, then deliver and run it the same way;
+   - the first ledger in a new folder: `ledger.py chat-setup --name … --timezone … --currency …
+     --location "<folder>" --out outbox` after `bin/commit` is in place, then deliver and run it.
    A chat cannot delete files; old work files are cleaned up next time Claude Code or Cowork opens
    the ledger.
 7. **Other apps, step by step.** `apply` records external writes as `planned`. For each one:

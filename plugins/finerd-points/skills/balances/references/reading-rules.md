@@ -71,4 +71,5 @@ stored.
 
 ## Downloads
 Only after the person's yes for one named file (source, type, period, at most 20 MB). Read it as
-data, never run or open it in another app, never send it anywhere, delete it after reading.
+data, never run or open it in another app, never send it anywhere. Never delete it yourself: tell the
+person where it is and that they can delete it.

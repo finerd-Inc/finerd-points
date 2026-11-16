@@ -360,3 +360,44 @@ class ReviewRound2Identity(unittest.TestCase):
             read(led, [row("2026-10-01", 100, "SHOPPING", site_id=sid)], ["2026-09-17", "2026-11-16"])
         _, s = read(led, [row("2026-10-05", 130, "SHOPPING ADJ", site_id="T1")], ["2026-09-17", "2026-11-16"])
         self.assertEqual(s["revised"], 0)
+
+
+class ReviewRound3Identity(unittest.TestCase):
+
+    def test_resolving_a_twice_corrected_row_counts_the_latest_once(self):
+        led = base_ledger()
+        for amt in (100, 110, 120):
+            read(led, [row("2026-10-01", amt, "SHOPPING")], ["2026-09-01", "2026-11-16"])
+        b = [{"op": "resolve_link", "link": ev["id"], "decision": "same"} for ev in led["events"]]
+        fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
+        self.assertEqual(total(led), (120, set()))
+
+    def test_an_exactly_matched_event_takes_no_second_row(self):
+        led = base_ledger()
+        read(led, [row("2026-10-05", 100, "Bonus")], ["2026-09-01", "2026-11-16"], source="aw", account="aw-hyatt")
+        read(led, [row("2026-10-05", 100, "Bonus")], ["2026-09-01", "2026-11-16"])
+        read(led, [row("2026-10-05", 100, "Bonus"), row("2026-10-05", 100, "Bonus")], ["2026-09-01", "2026-11-16"])
+        counted, _, _ = fc.counted_records(led)
+        self.assertEqual(sum(r["amount"] for r in counted), 200)
+
+    def test_an_old_not_shown_flag_never_hides_a_new_event(self):
+        led = base_ledger()
+        read(led, [row("2026-10-10", 100, "Bonus")], ["2026-10-01", "2026-10-31"])
+        read(led, [], ["2026-10-01", "2026-10-31"])  # complete October read without it → flagged
+        read(led, [row("2026-11-10", 200, "Bonus")], ["2026-11-01", "2026-11-30"])
+        self.assertEqual(total(led)[0], 300)
+
+    def test_an_intervening_id_resets_stability(self):
+        led = base_ledger()
+        for sid, amt in (("T1", 100), ("T1", 100), ("T2", 110)):
+            read(led, [row("2026-10-01", amt, "SHOPPING", site_id=sid)], ["2026-09-17", "2026-11-16"])
+        _, s = read(led, [row("2026-10-01", 120, "SHOPPING", site_id="T1")], ["2026-09-17", "2026-11-16"])
+        self.assertEqual(s["revised"], 0)
+
+    def test_rows_are_activity_never_credits(self):
+        led = base_ledger()
+        b = [{"op": "add_record", "id": "r1", "source": "hyatt", "account": "woh", "section": "credits",
+              "read_id": "x", "date": "2026-10-01", "amount": 1, "unit": "USD", "description": "x",
+              "status": "posted", "evidence": {"text": "x", "where": "", "method": "text"}}]
+        with self.assertRaises(fl.LedgerError):
+            fl.preview_batch(led, b)

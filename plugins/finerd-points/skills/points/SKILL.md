@@ -47,8 +47,9 @@ Not in this version: status forecasts, «keep or cancel this card», unattended 
 2. Ask for one dedicated folder (default `~/finerd points`, outside iCloud, Google Drive, Dropbox or
    OneDrive) and never a wider one. Choosing it approves creating it and an empty ledger there:
    `ledger.py setup --folder <folder> --name <first name> --timezone <tz> --currency <cur>`.
-   In a chat: ask for access to that folder, deliver `scripts/fp_commit.sh` as `bin/commit`, check its
-   hash, and publish the first ledger with `chat-prepare` (base hash `none`).
+   In a chat: ask for access to that folder, create `bin/`, `work/`, `journal/`, `backups/`, `locks/` and
+   `reports/` in it, deliver `scripts/fp_commit.sh` as `bin/commit`, check its hash against
+   `ledger.py script-hash`, and publish the first ledger with `ledger.py chat-setup` (`writes.md` step 6).
 3. **Inventory first.** Ask whose accounts belong in this ledger (a partner's only with their consent,
    recorded with `add_person`) and how far back to collect history (default 1 January of last year;
    record it with `{"op":"set_setup","key":"history_from","value":"YYYY-MM-DD"}`).
@@ -65,7 +66,8 @@ Not in this version: status forecasts, «keep or cancel this card», unattended 
    site shows reaches the credit calculator) (match the catalog,
    `facts/cards/*.json`; a card outside the catalog is still added; for anniversary-based credits ask
    the open date or the anniversary MM-DD; never card numbers, last four digits optional).
-6. One batch, `ledger.py preview --folder …`, show it, `ledger.py apply --folder … --confirm <hash>`.
+6. One batch file, `ledger.py preview --folder <folder> --batch setup.json`, show it, then
+   `ledger.py apply --folder <folder> --batch setup.json --confirm <hash>`.
 7. Hand over to `collect`: «Open your first site and sign in; tell me when you are in.»
 
 ### Record shapes
@@ -91,8 +93,9 @@ points; only the person's own data goes into their ledger.
 
 ## A household member asks to be removed
 `ledger.py redact --folder <folder> --person <id>` prints what goes; show it, and after the person
-agrees run it again with `--confirm <hash>`. Their calendar events are cleared through a previewed
-batch (details and reminders removed), not deleted. The older copies in the ledger folder (backups,
+agrees run it again with `--confirm <hash>`. The same change plans clearing their calendar events
+(details and reminders removed, events kept, never deleted): run `ledger.py pending --folder <folder>` and
+carry out each planned clearing as `writes.md` step 7 says. The older copies in the ledger folder (backups,
 saved batches, working files) are cleaned the next time Claude Code or Cowork opens the folder
 (`open --cleanup`); until then say so. Tell them plainly what stays: old conversations, exports the
 person made, and anything in finance apps.

@@ -129,6 +129,17 @@ has_commit() { # the ledger's commits list carries this operation id (JSON escap
     tr -d ' \t\r\n' < "$LEDGER" | grep -qF "\"commit_id\":\"$1\""
 }
 
+published() { # this hash is the current ledger, or a committed later operation was built on it
+    [ -n "$1" ] || return 1
+    [ -f "$LEDGER" ] && [ "$(sha "$LEDGER")" = "$1" ] && return 0
+    for k in "$DIR"/journal/*.json; do
+        [ -f "$k" ] || continue
+        case "$k" in *.batch.json) continue;; esac
+        [ "$(jval "$k" state)" = committed ] && [ "$(jval "$k" base_hash)" = "$1" ] && return 0
+    done
+    return 1
+}
+
 older_than_2min() { [ -n "$(find "$1" -prune -mmin +2 2>/dev/null)" ]; }
 
 set_state() { # $1 journal file, $2 new state
@@ -141,7 +152,8 @@ recover() { # resolve «planned» entries: committed if the ledger carries the o
         case "$j" in *.batch.json) continue;; esac
         [ "$(jval "$j" state)" = planned ] || continue
         jop=$(jval "$j" op_id)
-        if [ -f "$LEDGER" ] && has_commit "$jop"; then
+        jnew=$(jval "$j" new_hash)
+        if published "$jnew" || { [ -f "$LEDGER" ] && has_commit "$jop"; }; then
             set_state "$j" committed; say "RECOVERED=$jop committed"
         else
             set_state "$j" abandoned; say "RECOVERED=$jop abandoned"
@@ -175,10 +187,17 @@ done
 cmd=${1:-}
 case "$cmd" in
 release-guard)
-    # only after the person agreed: a guard older than two minutes is left by a crashed commit
-    [ -d "$GUARD" ] || { say "RESULT=nothing-to-release"; exit 0; }
-    older_than_2min "$GUARD" || fail 14 "the guard lock is recent; a commit may be running"
-    park "$GUARD" guard-released && say "RESULT=released"
+    # only after the person agreed: a guard older than two minutes is left by a crashed commit.
+    # One release at a time: a second one waits for .lock-release (left by a crash: the person removes it).
+    mkdir "$DIR/.lock-release" 2>/dev/null || fail 14 "another release is running (or .lock-release was left behind)"
+    if [ ! -d "$GUARD" ]; then
+        say "RESULT=nothing-to-release"
+    elif older_than_2min "$GUARD"; then
+        park "$GUARD" guard-released && say "RESULT=released"
+    else
+        say "RESULT=refused CODE=14 REASON=the guard lock is recent; a commit may be running"
+    fi
+    park "$DIR/.lock-release" release-done
     exit 0
     ;;
 check)

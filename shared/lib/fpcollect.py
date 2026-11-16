@@ -31,6 +31,7 @@ import fpledger as fl
 SOURCE_KINDS = ("program", "bank_card", "aggregator", "sheet", "email", "statement", "other")
 INVENTORY_KINDS = ("program", "card", "bank", "app", "aggregator", "sheet", "other")
 COVERAGE_STATES = ("complete", "ends_unreconciled", "partial", "unavailable")
+SECTIONS = ("activity", "certificates")  # an issuer's benefits tracker is observations, never rows
 STATUSES = ("posted", "pending")
 METHODS = ("text", "screenshot", "file", "person")
 RELATIONS = ("possibly_same", "probably_same")
@@ -183,8 +184,15 @@ def _account_ok(led, op, staged, i):
         _refuse(i, f"account {op['account']} is not in source {op['source']}.")
 
 
+def _section_ok(op, i):
+    if op["section"] not in SECTIONS:
+        _refuse(i, f"section is one of {', '.join(SECTIONS)}; every dated row, statement credits included, is "
+                   f"activity, and an issuer's benefits tracker is recorded as observations.")
+
+
 def check_add_coverage(led, op, i, staged):
     _account_ok(led, op, staged, i)
+    _section_ok(op, i)
     if op["state"] not in COVERAGE_STATES:
         _refuse(i, f"coverage state must be one of {', '.join(COVERAGE_STATES)}.")
     _check_interval(i, "requested", op["requested"])
@@ -192,7 +200,9 @@ def check_add_coverage(led, op, i, staged):
         _check_interval(i, "covered", op["covered"])
     if op["state"] == "complete" and not (op.get("terminal") and op.get("continuity") and op.get("covered")):
         _refuse(i, "«complete» needs terminal evidence, continuity and the covered interval (spec v2 step 6).")
-    for f, n in (("terminal", 200), ("continuity", 200), ("stop_reason", 200), ("as_of_text", 80)):
+    if op.get("opening_balance") is not None and not fl._num(op["opening_balance"], minimum=-float("inf")):
+        _refuse(i, "opening_balance is a number.")
+    for f, n in (("terminal", 200), ("continuity", 200), ("stop_reason", 200), ("as_of_text", 80), ("filters", 200)):
         _clean_or_refuse(i, f, op.get(f), n)
     for d in op.get("incomplete_days") or []:
         if not fl.is_date(d):
@@ -203,6 +213,7 @@ def check_add_record(led, op, i, staged):
     if not fl.ID_RE.match(op["id"]) or _find(led, "records", op["id"]) or ("records", op["id"]) in staged:
         _refuse(i, f"record id {op['id']!r} is invalid or already used.")
     _account_ok(led, op, staged, i)
+    _section_ok(op, i)
     if not fl.is_date(op["date"]):
         _refuse(i, "date must be a real date, YYYY-MM-DD.")
     if not fl._num(op["amount"], minimum=-float("inf")):
@@ -226,6 +237,11 @@ def check_record_change(led, op, i, staged):
         _refuse(i, f"record {op['record']} not found.")
     k = op["op"]
     if k == "revise_record":
+        new = op["new"]
+        if not isinstance(new, dict) or set(new) - {"date", "amount", "description", "status"}:
+            _refuse(i, "a revision changes only date, amount, description and status.")
+        if not fl._num(new.get("amount"), minimum=-float("inf")):
+            _refuse(i, "a revision carries the new signed amount.")
         if op["reason"] not in ("pending_posted", "site_id"):
             _refuse(i, "a record is revised automatically only pending→posted or by a stable site id.")
         if rec and op["reason"] == "pending_posted" and rec.get("status") != "pending":
@@ -241,6 +257,11 @@ def check_record_change(led, op, i, staged):
 
 
 def check_link(led, op, i, staged):
+    if op.get("id") is not None and (not fl.ID_RE.match(str(op["id"])) or _find(led, "events", op["id"])
+                                     or ("events", op["id"]) in staged):
+        _refuse(i, f"link id {op['id']!r} is invalid or already used.")
+    if op.get("id"):
+        staged.add(("events", op["id"]))
     if op["relation"] not in RELATIONS:
         _refuse(i, f"relation is one of {', '.join(RELATIONS)}.")
     for r in (op["a"], op["b"]):
@@ -291,6 +312,7 @@ def _apply_add_coverage(led, op, ts):
 def _apply_add_record(led, op, ts):
     rec = {k: v for k, v in op.items() if k not in ("op",)}
     rec["state"] = "active"
+    rec["seq"] = max((r.get("seq", 0) for r in led["records"]), default=0) + 1  # order of arrival, never reused
     rec["seen_in"] = [op["read_id"]]
     if op.get("site_id"):
         rec["site_id_seen"] = [op["read_id"]]
@@ -305,6 +327,8 @@ def _apply_record_change(led, op, ts):
     if k == "seen_record":
         if op["read_id"] not in rec["seen_in"]:
             rec["seen_in"].append(op["read_id"])
+        if rec.get("not_shown") and not rec["not_shown"].get("decision"):
+            rec.pop("not_shown")  # the site shows it again: nothing waits for a decision
         if op.get("site_id_changed"):
             rec["site_id_seen"] = []
         elif op.get("site_id") and op["site_id"] == rec.get("site_id") and \
@@ -320,6 +344,8 @@ def _apply_record_change(led, op, ts):
             rec["seen_in"].append(op["read_id"])
     elif k == "flag_not_shown":
         rec["not_shown"] = {"read_id": op["read_id"], "at": ts, "decision": None}
+    elif k == "reset_site_id":
+        rec["site_id_seen"] = []
     elif k == "drop_pending":
         rec["state"] = "dropped"
         rec["dropped"] = {"read_id": op["read_id"], "at": ts}
@@ -367,6 +393,8 @@ def _describe(led, op):
         return f"New row {_describe_record(op)}{st}"
     if k == "seen_record":
         return f"Already in the ledger: {op['record']}"
+    if k == "reset_site_id":
+        return f"The site no longer shows the id of {op['record']}; its id is not trusted until seen twice again"
     if k == "revise_record":
         return f"Pending row {op['record']} has posted: {_describe_record({**op['new'], 'unit': ''})}"
     if k == "link_records":
@@ -405,6 +433,7 @@ V2 = {
     "revise_record": (("record", "read_id", "reason", "new"), {"record", "read_id", "reason", "new"},
                       check_record_change, _apply_record_change),
     "flag_not_shown": (("record", "read_id"), {"record", "read_id"}, check_record_change, _apply_record_change),
+    "reset_site_id": (("record", "read_id"), {"record", "read_id"}, check_record_change, _apply_record_change),
     "drop_pending": (("record", "read_id"), {"record", "read_id"}, check_record_change, _apply_record_change),
     "link_records": (("a", "b", "relation"), {"id", "a", "b", "relation", "basis"}, check_link, _apply_link),
     "resolve_link": (("link", "decision"), {"link", "decision"}, check_resolve, _apply_resolve_link),
@@ -453,8 +482,10 @@ def plan_read(led, read):
            "requested": read["requested"], "state": read["state"], "read_at": read["read_at"]}
     for f in ("covered", "terminal", "continuity", "stop_reason", "opening_balance", "as_of_text", "filters"):
         if read.get(f) not in (None, ""):
-            cov[f] = fl.clean_text(read[f], 200) if f in ("terminal", "continuity", "stop_reason", "as_of_text") \
-                else read[f]
+            if f in ("terminal", "continuity", "stop_reason", "as_of_text", "filters"):
+                cov[f] = fl.clean_text(read[f] if isinstance(read[f], str) else "; ".join(map(str, read[f])), 200)
+            else:
+                cov[f] = read[f]
     if cut:
         cov["incomplete_days"] = sorted(cut)
     batch.append(cov)
@@ -501,6 +532,12 @@ def plan_read(led, read):
             continue  # an id seen in only one read is not trusted with changed content
         matched.add(e["id"])
         taken.add(n)
+
+    shown_ids = set(id_count)
+    for e in mine:
+        if e.get("site_id") and e.get("site_id_seen") and e["site_id"] not in shown_ids and \
+                _inside(e["date"], covered) and e["date"] not in cut and e["id"] not in matched:
+            batch.append({"op": "reset_site_id", "record": e["id"], "read_id": rid})
 
     # 2. exact matches, one to one by count within a day
     def in_scope(date):
@@ -582,7 +619,7 @@ def plan_read(led, read):
     # groups: it joins at most one, and within this read each group takes at most one new row, so two
     # identical events never hide behind one, while a row corrected twice still joins its group.
     group_of = _event_groups(led)
-    used_groups = set()
+    used_groups = {group_of.get(x, x) for x in matched}  # an event this read already showed takes no second row
     used_ids = {e["id"] for e in led["records"]}
     for n in left_rows:
         r = rows[n]
@@ -606,7 +643,7 @@ def plan_read(led, read):
                 continue
             near = abs(_days(e["date"], r["date"])) <= WINDOW_DAYS and \
                 (e["amount"] == r["amount"] or similar(e["description"], r["description"]))
-            gone = e in not_shown or bool(e.get("not_shown"))
+            gone = e in not_shown  # no longer shown inside this read's own covered interval
             if near or gone:
                 score = (e["id"] in group_of, 0 if e["amount"] == r["amount"] else 1, abs(_days(e["date"], r["date"])))
                 if best is None or score < best:
@@ -638,6 +675,11 @@ def plan_read(led, read):
     return batch, summary
 
 
+def _order(r):
+    """Arrival order: the sequence number records get when added (older ledgers: the time they were added)."""
+    return (r.get("seq", 0), r.get("added_at", ""), r["id"])
+
+
 def _event_groups(led):
     """record id → group id (the smallest record id in its group) over links not decided «different»."""
     parent = {}
@@ -660,7 +702,7 @@ def _group_keep(led, g, group_of, fallback):
     """The record a group is counted by: a direct source's over an aggregator's, then the earliest added."""
     members = [r for r in led["records"] if group_of.get(r["id"]) == g and _active(r)] or [fallback]
     kinds = {s["id"]: s["kind"] for s in led.get("sources", [])}
-    return min(members, key=lambda r: (kinds.get(r["source"]) == "aggregator", r.get("added_at", ""), r["id"]))
+    return min(members, key=lambda r: (kinds.get(r["source"]) == "aggregator", _order(r)))
 
 
 def _inventory_of(led, source_id, account_id):
@@ -700,9 +742,10 @@ def plan_reads(led, reads):
 def counted_records(led):
     """Return (counted, excluded, preliminary_accounts).
 
-    counted: posted, active records the totals use. excluded: {record id: reason}. A «possibly the same» or
-    «probably the same» link that is unresolved counts the earlier record (or, across sources, the direct
-    source's) and leaves the other out; the account's totals are preliminary until the person decides."""
+    Records joined by links (not decided «different») form one event group, and a group counts exactly one
+    record: a direct source's over an aggregator's; once the person decided every link in the group «same»,
+    the row a site still shows (its latest value); while any link is undecided, the earliest row, and the
+    accounts involved are preliminary."""
     recs = {r["id"]: r for r in led["records"]}
     excluded = {}
     prelim = set()
@@ -713,38 +756,36 @@ def counted_records(led):
             excluded[r["id"]] = "pending row that never posted"
         elif r.get("state") == "no_longer_shown":
             excluded[r["id"]] = "no longer shown (you confirmed)"
-        elif r.get("not_shown") and not r["not_shown"].get("decision"):
-            prelim.add((r["source"], r["account"]))
-    kinds = {s["id"]: s["kind"] for s in led["sources"]}
-    for ev in led["events"]:
-        if ev.get("kind") != "link":
+    kinds = {s_["id"]: s_["kind"] for s_ in led.get("sources", [])}
+    group_of = _event_groups(led)
+    groups = {}
+    for rid, g in group_of.items():
+        if rid in recs:
+            groups.setdefault(g, []).append(recs[rid])
+    undecided = set()
+    for ev in led.get("events", []):
+        if ev.get("kind") == "link" and ev.get("state") == "unresolved" and ev["records"][0] in group_of:
+            undecided.add(group_of[ev["records"][0]])
+    for g, members in groups.items():
+        live = [r for r in members if r["id"] not in excluded]
+        if len(live) <= 1:
             continue
-        a, b = (recs.get(x) for x in ev["records"])
-        if not a or not b:
-            continue
-        if ev["state"] == "different":
-            continue
-        if ev["relation"] == "probably_same":
-            # count the direct source's row, never the aggregator's
-            keep, drop = (a, b) if kinds.get(b["source"]) == "aggregator" or kinds.get(a["source"]) != "aggregator" \
-                else (b, a)
-        elif ev["state"] == "same":
-            # the person said one event: count the row the site still shows (its corrected value)
-            gone = [x for x in (a, b) if x.get("state") == "no_longer_shown" or x.get("not_shown")]
-            if len(gone) == 1:
-                drop = gone[0]
-                keep = b if drop is a else a
-            else:
-                keep, drop = (b, a) if a.get("added_at", "") <= b.get("added_at", "") else (a, b)
+        direct = [r for r in live if kinds.get(r["source"]) != "aggregator"] or live
+        if g in undecided:
+            keep = min(direct, key=_order)
+            for r in live:
+                prelim.add((r["source"], r["account"]))
         else:
-            # undecided: the earlier record stays counted, the new one waits (spec v2, appendix C)
-            keep, drop = (a, b) if a.get("added_at", "") <= b.get("added_at", "") else (b, a)
-        excluded.setdefault(drop["id"], "same event as " + keep["id"] if ev["state"] == "same"
-                            else "possibly the same as " + keep["id"] + " (you have not decided)")
-        if ev["state"] == "unresolved":
-            prelim.add((drop["source"], drop["account"]))
-            prelim.add((keep["source"], keep["account"]))
+            shown = [r for r in direct if not r.get("not_shown")] or direct
+            keep = max(shown, key=_order)
+        for r in live:
+            if r is not keep:
+                excluded[r["id"]] = ("possibly the same as " + keep["id"] + " (you have not decided)"
+                                     if g in undecided else "same event as " + keep["id"])
     counted = [r for r in recs.values() if r["id"] not in excluded]
+    for r in counted:  # a counted row the site no longer shows waits for the person's confirmation
+        if r.get("not_shown") and not r["not_shown"].get("decision"):
+            prelim.add((r["source"], r["account"]))
     return counted, excluded, prelim
 
 

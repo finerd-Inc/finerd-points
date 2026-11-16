@@ -177,3 +177,20 @@ class ReviewRound2Credits(unittest.TestCase):
         fl.apply_batch(led, b, fl.preview_batch(led, b)[0])
         res = credits.analyze(led, ff.load_catalog(ROOT / "shared" / "facts"), {}, [], TODAY, 2026)
         self.assertEqual(credits.totals(res)["used"], 100)
+
+
+class ReviewRound3Bridge(unittest.TestCase):
+
+    def test_all_of_a_cards_own_sources_count(self):
+        led = ReviewRound2Report()._gold([{"op": "add_source", "id": "stmt", "kind": "statement", "name": "Statement",
+                                           "unit": "USD", "accounts": [{"id": "st", "label": "Gold statement",
+                                                                        "person": "me", "unit": "USD",
+                                                                        "inventory": "gold"}]}])
+        rd = {"source": "stmt", "account": "st", "section": "activity", "read_id": "s1",
+              "requested": ["2026-01-01", "2026-11-16"], "covered": ["2026-01-01", "2026-11-16"], "state": "complete",
+              "terminal": "t", "continuity": "c", "read_at": "2026-11-16T12:00:00Z", "unit": "USD",
+              "rows": [{"date": "2026-08-01", "amount": -40, "description": "Purchase A", "status": "posted"},
+                       {"date": "2026-08-02", "amount": -30, "description": "Purchase B", "status": "posted"}]}
+        bb, _ = fc.plan_read(led, rd)
+        fl.apply_batch(led, bb, fl.preview_batch(led, bb)[0])
+        self.assertEqual(ReviewRound2Report()._resy(led)["used"], 25.0)

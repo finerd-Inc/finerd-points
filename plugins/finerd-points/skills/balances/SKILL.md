@@ -7,8 +7,8 @@ description: Shows the person's points and miles balances per loyalty program wi
 
 Scripts: this skill's `scripts/`. Read `references/writes.md` before recording anything.
 The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); scripts read it with
-`--ledger <folder>/ledger.json`, and every change goes through `ledger.py preview --folder <folder>` and
-`ledger.py apply --folder <folder> --confirm <hash>` (`references/writes.md`).
+`--ledger <folder>/ledger.json`, and every change goes through `ledger.py preview --folder <folder> --batch <file>` and
+`ledger.py apply --folder <folder> --batch <file> --confirm <hash>` (`references/writes.md`).
 
 ## Contract
 - **Triggers:** balances, a balance update, a pasted statement or program email.
@@ -23,14 +23,15 @@ The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); scripts
 1. Show what the ledger knows: `python3 scripts/balances.py --ledger <folder>/ledger.json --format md`.
    To read a program's site now, hand over to `collect`.
 2. To refresh from finerd: per `references/apps/finerd/APP.md`, read each REWARD account's
-   latest verified balance (and the computed balance), write a `finerd-points/balances@1` file
-   (one entry per program: `account_id`, `program`, `amount`, `unit`, `as_of`, `kind`), then
+   latest verified balance (and the computed balance), write a `finerd-points/balances@1` file:
+   `{"contract":"finerd-points/balances@1","source":{"app":"finerd"},"balances":[{"account_id":"…",
+   "program":"World of Hyatt","amount":52310,"unit":"points","as_of":"2026-11-16","kind":"verified"}]}`, then
    `balances.py --ledger <folder>/ledger.json --input bal.json --proposals bal-batch.json`. For other sources
    write the same file with `kind` = program_page, statement, email or person.
 3. Balances are matched to ledger programs by the finance-app account id (set `finance_link` on the
    program with `amend` if it is missing), else by program or nickname. Show anything `unmatched`
    and ask which program it is. If nothing is proposed, there is nothing new to record.
-4. Preview `bal-batch.json` with `ledger.py preview --folder <folder>`, apply on yes, show the table again.
+4. Preview `bal-batch.json` with `ledger.py preview --folder <folder> --batch bal-batch.json`, apply on yes, show the table again.
 
 The latest date wins; on the same date the stronger source wins and the other value is shown as a
 disagreement. A value from an aggregator (AwardWallet) is shown only with its own age and never

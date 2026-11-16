@@ -205,7 +205,8 @@ def cmd_redact(a):
         return
     _need_folder(a, "redact")
     res, ops = _publish_change(a, lambda l: fl.redact_person(l, a.person, a.confirm), f"remove {a.person}")
-    out({"version": int(res["version"]), "calendar_updates_to_preview": ops})
+    out({"version": int(res["version"]), "calendar_clearings_planned": len(ops),
+         "next": "Run `ledger.py pending` and clear each listed calendar event as writes.md step 7 says."})
 
 
 def cmd_pending(a):
@@ -217,6 +218,8 @@ def cmd_current(a):
 
 
 def cmd_export(a):
+    if a.out and Path(a.out).exists() and any(Path(a.out).iterdir()):
+        raise fl.LedgerError(f"{a.out} is not empty; choose an empty folder (nothing is overwritten).")
     if a.archive:
         _need_folder(a, "an archive export")
         out({"archive": st.export_archive(a.folder, a.archive)})
@@ -231,6 +234,49 @@ def cmd_validate(a):
 
 def cmd_script_hash(a):
     out({"script": str(st.SCRIPT), "sha256": st.script_hash()})
+
+
+def _chat_outbox(a, cand, op_id, base_hash, bv, batch=None):
+    outbox = Path(a.out)
+    outbox.mkdir(parents=True, exist_ok=True)
+    name = f"cand-{op_id}.json"
+    payload = st.serialize(cand)
+    ch = hashlib.sha256(payload).hexdigest()
+    (outbox / name).write_bytes(payload)
+    (outbox / (name + ".meta")).write_text(f"protocol={st.PROTOCOL}\nop_id={op_id}\nversion={bv + 1}\nhash={ch}\n")
+    files = [name, name + ".meta"]
+    if batch is not None:
+        (outbox / (name + ".batch.json")).write_text(json.dumps(batch, ensure_ascii=False) + "\n", encoding="utf-8")
+        files.append(name + ".batch.json")
+    out({"result": "prepared", "deliver_into_work": files,
+         "commit_args": ["commit", op_id, base_hash, str(bv), name, ch],
+         "run_on_computer": f'sh "<folder>/bin/commit" commit {op_id} {base_hash} {bv} {name} {ch}',
+         "expect": f"RESULT=committed VERSION={bv + 1} HASH={ch}",
+         "if_refused": f'rename the delivered files to done-<name> on the computer, e.g. mv "<folder>/work/{name}" '
+                       f'"<folder>/work/done-{name}"'})
+
+
+def cmd_chat_setup(a):
+    """Chat: the first ledger, published through bin/commit with base none (after bin/commit is delivered)."""
+    led = fl.new_ledger(a.name, a.currency, a.timezone, "folder", a.household)
+    led["_meta"]["setup"]["location"] = a.location
+    op_id = st.new_op_id()
+    cand = st.prepare_candidate(led, 0, op_id, "chat", "first ledger")
+    _chat_outbox(a, cand, op_id, "none", 0)
+
+
+def cmd_chat_op(a):
+    """Chat: record the outcome of an external write (sent, confirmed with its read-back, unknown, failed)."""
+    data = Path(a.ledger).read_bytes()
+    if hashlib.sha256(data).hexdigest() != a.base_hash:
+        raise fl.LedgerError("The ledger copy in this conversation is not the one whose hash the computer reported. "
+                             "Bring ledger.json in again.")
+    led = fl.loads(data.decode("utf-8"))
+    fl.set_op_state(led, a.op_id, a.state, None, a.destination_id, _json_arg(a.read_back), a.error)
+    op_id = st.new_op_id()
+    bv = led["version"]
+    _chat_outbox(a, st.prepare_candidate(led, bv, op_id, "chat", f"external {a.op_id} {a.state}"), op_id,
+                 a.base_hash, bv)
 
 
 def cmd_chat_prepare(a):
@@ -255,19 +301,7 @@ def cmd_chat_prepare(a):
     fl.apply_batch(led, batch, h)
     op_id = st.new_op_id()
     bv = led["version"]
-    cand = st.prepare_candidate(led, bv, op_id, "chat", a.summary or "")
-    outbox = Path(a.out)
-    outbox.mkdir(parents=True, exist_ok=True)
-    name = f"cand-{op_id}.json"
-    payload = st.serialize(cand)
-    ch = hashlib.sha256(payload).hexdigest()
-    (outbox / name).write_bytes(payload)
-    (outbox / (name + ".meta")).write_text(f"protocol={st.PROTOCOL}\nop_id={op_id}\nversion={bv + 1}\nhash={ch}\n")
-    (outbox / (name + ".batch.json")).write_text(json.dumps(batch, ensure_ascii=False) + "\n", encoding="utf-8")
-    out({"result": "prepared", "deliver_into_work": [name, name + ".meta", name + ".batch.json"],
-         "commit_args": ["commit", op_id, a.base_hash, str(bv), name, ch],
-         "run_on_computer": f'sh "<folder>/bin/commit" commit {op_id} {a.base_hash} {bv} {name} {ch}',
-         "expect": f"RESULT=committed VERSION={bv + 1} HASH={ch}"})
+    _chat_outbox(a, st.prepare_candidate(led, bv, op_id, "chat", a.summary or ""), op_id, a.base_hash, bv, batch)
 
 
 def main(argv=None):
@@ -373,6 +407,26 @@ def main(argv=None):
     s.add_argument("--out", required=True)
     s.add_argument("--summary")
     s.set_defaults(fn=cmd_chat_prepare)
+
+    s = sub.add_parser("chat-setup", help="chat: the first ledger, to publish through bin/commit with base none")
+    s.add_argument("--name", default="Me")
+    s.add_argument("--currency", default="USD")
+    s.add_argument("--timezone", default="UTC")
+    s.add_argument("--household", choices=["single", "shared", "separate"], default="single")
+    s.add_argument("--location", required=True, help="the ledger folder's path on the person's computer")
+    s.add_argument("--out", required=True)
+    s.set_defaults(fn=cmd_chat_setup)
+
+    s = sub.add_parser("chat-op", help="chat: record an external write's outcome through bin/commit")
+    s.add_argument("--ledger", required=True)
+    s.add_argument("--base-hash", required=True)
+    s.add_argument("--op-id", required=True)
+    s.add_argument("--state", required=True, choices=list(fl.OP_STATES))
+    s.add_argument("--destination-id")
+    s.add_argument("--read-back")
+    s.add_argument("--error")
+    s.add_argument("--out", required=True)
+    s.set_defaults(fn=cmd_chat_op)
 
     a = ap.parse_args(argv)
     try:

@@ -292,6 +292,9 @@ def publish(folder, led, base_hash, base_version, writer="claude-code", summary=
     if res.get("result") == "committed":
         led.clear()
         led.update(cand)
+    else:
+        # a refused candidate is never published: mark it finished so cleanup removes it in 30 days
+        mark_done(folder, name, name + ".meta", name + ".batch.json")
     return res
 
 
@@ -478,6 +481,8 @@ def export_archive(folder, out_path):
     out = Path(out_path).expanduser().resolve()
     if out == root or root in out.parents and out.parent.name not in ("reports",):
         raise StoreError("Write the archive outside the ledger folder, or into its reports/ folder.")
+    if out.exists():
+        raise StoreError(f"{out} already exists; choose a new name (nothing is overwritten).")
     backups = [{"file": b.name, "sha256": file_sha(b), "bytes": b.stat().st_size}
                for b in sorted((root / "backups").glob("ledger.v*.json"))]
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:

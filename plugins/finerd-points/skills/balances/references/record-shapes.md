@@ -19,7 +19,17 @@
 {"op":"add_signup_offer","id":"bilt-sub","card":"bilt-palladium","bonus":"50,000 points","spend":4000,
  "deadline":"2026-05-08"}
 {"op":"add_person","id":"p2","name":"Anna","consent":{"given":true,"on":"2026-11-02"}}
+{"op":"add_inventory","id":"hyatt","kind":"program","label":"World of Hyatt","person":"me","found_by":"email"}
+{"op":"void","target":"obs-1a2b3c4d","reason":"read from the wrong account"}
+{"op":"resolve_link","link":"lnk-1a2b3c4d","decision":"same"}
+{"op":"resolve_not_shown","record":"rec-0a1b2c3d4e","decision":"gone"}
 ```
+- `add_inventory` `kind`: program | card | bank | app | aggregator | sheet | other; `found_by`: person |
+  email | source. A program's inventory item and its `add_account` share one id; a card's and its
+  `add_card` share one id.
+- Sources, coverage and rows (`add_source`, `add_coverage`, `add_record` and the rest) are produced by
+  `ledger.py plan-read` from a read (`read-format.md`). A source's accounts are fixed when it is added: an
+  account found later in the same site gets a new source id (for example `amex-2`).
 - `status`: booked | cancelled (points and fees returned) | cancelled_with_fee (add
   `cancellation_fee` and `cancelled_on`). Cost `kind`: annual_fee | points_purchase | tool |
   cancellation_fee | other. Amounts in another currency need `fx_rate` (report currency per unit:

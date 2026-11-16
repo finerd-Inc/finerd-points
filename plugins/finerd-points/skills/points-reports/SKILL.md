@@ -8,7 +8,7 @@ description: Builds the person's yearly points and miles report by the finerd po
 Method: framework «Accounting for Loyalty Currencies in Personal Finances» v1.2, §5.1; formula and
 rules in `references/year-in-review-formula.md`. Scripts: this skill's `scripts/`.
 The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); every change goes through
-`ledger.py preview --folder <folder>` and `ledger.py apply --folder <folder> --confirm <hash>`.
+`ledger.py preview --folder <folder> --batch <file>` and `ledger.py apply --folder <folder> --batch <file> --confirm <hash>`.
 
 ## The report (shown after every collection and refresh)
 `python3 scripts/report.py --ledger <folder>/ledger.json --html <folder>/reports/report-<YYYY-MM-DD>.html`

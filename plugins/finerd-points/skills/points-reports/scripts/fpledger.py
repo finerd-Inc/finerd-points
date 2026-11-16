@@ -78,7 +78,8 @@ class LedgerError(Exception):
 
 # Keys whose values are identifiers (bank or app ids), never scanned as card numbers.
 ID_KEYS = {"id", "ref", "op_id", "event_id", "destination_id", "account_id", "transaction_id", "target",
-           "subject", "ledger_id", "match_key", "calendar_id", "observation"}
+           "subject", "ledger_id", "match_key", "calendar_id", "observation", "site_id", "read_id", "commit_id",
+           "record", "link", "a", "b", "source", "account", "inventory"}
 SECRET_KEYS = re.compile(r"(?i)^(password|passcode|pin|otp|one[_ -]?time[_ -]?code|cvv|cvc|security[_ -]?code|"
                          r"api[_ -]?key|secret|token|access[_ -]?token|refresh[_ -]?token|ssn|"
                          r"social[_ -]?security|passport|member[_ -]?number|account[_ -]?number|card[_ -]?number)$")
@@ -723,6 +724,7 @@ def _check_op(led, op, i, staged_ids):
             raise LedgerError(f"Step {i + 1} ({kind}): unknown field(s) {', '.join(unknown)}.")
         if _secret_keys(op):
             raise LedgerError(f"Step {i + 1} ({kind}): passwords, codes, keys and ID numbers are never stored.")
+        _refuse_forbidden(op, f"Step {i + 1} ({kind})")
         EXTRA_OPS[kind]["check"](led, op, i, staged_ids)
         return
     if kind not in REQUIRED:
@@ -987,27 +989,31 @@ def apply_batch(led, batch, confirm_hash, session=None, now=None):
             led["_meta"]["setup"][op["key"]] = op["value"]
             results.append({"op": k, "key": op["key"]})
         elif k == "external":
-            base = external_op_id(op)
-            prev = _latest_op(led, base)
-            if prev and prev["state"] in ("confirmed", "sent", "planned", "unknown"):
-                results.append({"op": k, "op_id": prev["op_id"], "state": prev["state"], "skipped": True})
-                continue
-            op_id = base
-            retry_of = None
-            if prev and prev["state"] == "failed":
-                n = sum(1 for x in led["oplog"] if x["op_id"] == base or x.get("retry_of") == base)
-                op_id, retry_of = f"{base}-r{n + 1}", base
-            entry = {
-                "op_id": op_id, "target": op["target"], "app": op.get("app"), "action": op["action"],
-                "summary": op["summary"], "payload": op["payload"], "payload_hash": sha(op["payload"]),
-                "subject": op.get("subject"), "state": "planned", "destination_id": None,
-                "created_at": ts, "updated_at": ts, "history": [{"state": "planned", "at": ts}],
-            }
-            if retry_of:
-                entry["retry_of"] = retry_of
-            led["oplog"].append(entry)
-            results.append({"op": k, "op_id": op_id, "state": "planned"})
+            results.append(_plan_external(led, op, ts))
     return results
+
+
+def _plan_external(led, op, ts):
+    """Record an external write as planned (or recognize one already planned or done)."""
+    base = external_op_id(op)
+    prev = _latest_op(led, base)
+    if prev and prev["state"] in ("confirmed", "sent", "planned", "unknown"):
+        return {"op": "external", "op_id": prev["op_id"], "state": prev["state"], "skipped": True}
+    op_id = base
+    retry_of = None
+    if prev and prev["state"] == "failed":
+        n = sum(1 for x in led["oplog"] if x["op_id"] == base or x.get("retry_of") == base)
+        op_id, retry_of = f"{base}-r{n + 1}", base
+    entry = {
+        "op_id": op_id, "target": op["target"], "app": op.get("app"), "action": op["action"],
+        "summary": op["summary"], "payload": op["payload"], "payload_hash": sha(op["payload"]),
+        "subject": op.get("subject"), "state": "planned", "destination_id": None,
+        "created_at": ts, "updated_at": ts, "history": [{"state": "planned", "at": ts}],
+    }
+    if retry_of:
+        entry["retry_of"] = retry_of
+    led["oplog"].append(entry)
+    return {"op": "external", "op_id": op_id, "state": "planned"}
 
 
 # ---------------------------------------------------------------- external op states
@@ -1154,6 +1160,10 @@ def _owned_subjects(led, person_id):
     return cards, accounts, owned
 
 
+def _word_in(name, text):
+    return bool(name) and len(str(name)) >= 3 and re.search(r"(?<!\w)" + re.escape(str(name)) + r"(?!\w)", text) is not None
+
+
 def redaction_plan(led, person_id):
     """What a member's privacy withdrawal would remove from the current ledger."""
     if person_id == next((p["id"] for p in led["people"] if p.get("role") == "owner"), None):
@@ -1191,7 +1201,7 @@ def redaction_plan(led, person_id):
                                   if owned(e.get("subject")) or any(owned(m) for m in e.get("members") or [])),
         "oplog": sorted(x["op_id"] for x in led["oplog"]
                         if owned(x.get("subject")) or any(owned(m) for m in (x["payload"].get("members") or []))
-                        or any(n and n in canonical(x) for n in names)),
+                        or any(_word_in(n, canonical(x)) for n in names if n and len(str(n)) >= 3)),
     }
     # schema 2: what was collected from sites for this person
     src_accounts = sorted(f"{s_['id']}/{a['id']}" for s_ in led.get("sources", []) for a in s_["accounts"]
@@ -1215,7 +1225,7 @@ def redaction_plan(led, person_id):
         text.append(f"  calendar events to clear (details and reminders removed, events kept): {len(plan['calendar_events'])}")
     text.append("Not changed: earlier exports or copies of this file, copies in old conversations, and anything "
                 "in finance apps. The person deletes those themselves.")
-    plan["_names"] = sorted({n for n in names if n})
+    plan["_names"] = sorted({n for n in names if n and len(str(n)) >= 3})
     h = sha({"ledger": led["ledger_id"], "base": led["version"], "plan": plan})
     text.append(f"Redaction {h}")
     return h, plan, "\n".join(text)
@@ -1242,6 +1252,8 @@ def redact_person(led, person_id, confirm_hash, session=None, now=None):
             ev["members"] = []
             ev["title"] = "finerd points (removed)"
             ev["description"] = ""
+    for op in ops:  # the person agreed to clearing these events with the removal: planned in the same commit
+        _plan_external(led, op, ts)
     led["_meta"]["redactions"].append({"at": ts, "person": person_id, "files_scrubbed": False,
                                        "removed": tombstones(plan),
                                        "counts": {k: len(v) for k, v in plan.items() if k != "_names"}})
@@ -1337,7 +1349,7 @@ def apply_redaction(led, person_id, plan=None):
         for rec in led.get(coll, []):
             for a in rec.get("amendments", []) if isinstance(rec, dict) else []:
                 text = canonical([a.get("old"), a.get("new"), a.get("reason")])
-                if person_id in (a.get("old"), a.get("new")) or any(n and n in text for n in names):
+                if person_id in (a.get("old"), a.get("new")) or any(_word_in(n, text) for n in names):
                     a["old"] = a["new"] = "(removed at a household member's request)"
                     a["reason"] = "(removed)"
     for x in led["oplog"]:

@@ -8,8 +8,8 @@ description: Finds which credit-card credits and benefits the person has used, w
 Scripts: this skill's `scripts/` (`${CLAUDE_SKILL_DIR}/scripts` in Claude Code/Cowork). Card terms:
 this skill's `facts/` — never your memory. Read `references/writes.md` before writing.
 The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); scripts read it with
-`--ledger <folder>/ledger.json`, and every change goes through `ledger.py preview --folder <folder>` and
-`ledger.py apply --folder <folder> --confirm <hash>` (`references/writes.md`).
+`--ledger <folder>/ledger.json`, and every change goes through `ledger.py preview --folder <folder> --batch <file>` and
+`ledger.py apply --folder <folder> --batch <file> --confirm <hash>` (`references/writes.md`).
 
 ## Contract
 - **Triggers:** unused/used credits, «did it post», year-to-date benefit use, recording credits.
@@ -54,7 +54,8 @@ The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); scripts
    "field":"used_amount","value":10,"source":{"kind":"person"},"as_of":"<today>","confidence":"confirmed"}`;
    enrollment → `{"op":"observe","subject":"benefit:<card>/<benefit>","field":"enrolled","value":true,
    "source":{"kind":"person"},…}`. Add these to the same batch file as `credits-batch.json`, preview it
-   once with `ledger.py preview --folder <folder>`, and apply on yes.
+   once with `ledger.py preview --folder <folder> --batch credits-batch.json`, and apply on yes with
+   `ledger.py apply --folder <folder> --batch credits-batch.json --confirm <hash>`.
 
 Each bank transaction counts for one benefit only, a reversal comes off the credit it reverses,
 and nothing counts above the allowance. Percentage-back offers and one-time credits count when

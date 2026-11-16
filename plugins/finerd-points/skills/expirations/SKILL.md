@@ -8,8 +8,8 @@ description: Lists the person's upcoming deadlines — open card credits by thei
 Scripts: this skill's `scripts/`. Read `references/writes.md` and
 `references/connectors/google-calendar.md` before creating any event.
 The ledger is `<folder>/ledger.json` (default folder `~/finerd points`); scripts read it with
-`--ledger <folder>/ledger.json`, and every change goes through `ledger.py preview --folder <folder>` and
-`ledger.py apply --folder <folder> --confirm <hash>` (`references/writes.md`).
+`--ledger <folder>/ledger.json`, and every change goes through `ledger.py preview --folder <folder> --batch <file>` and
+`ledger.py apply --folder <folder> --batch <file> --confirm <hash>` (`references/writes.md`).
 
 ## Contract
 - **Triggers:** upcoming deadlines; reminders; calendar entries for them.

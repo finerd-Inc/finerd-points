@@ -113,9 +113,9 @@ def ledger_transactions(led):
     for r in counted:
         if r["section"] == "activity":  # issuer benefit trackers are observations, not rows: never counted twice
             rows_of.setdefault((r["source"], r["account"]), []).append(r)
-    # Only a card's own site or statement counts as its transactions (never an aggregator), and only one source
-    # account per card: the one with the most counted rows.
-    best = {}
+    # Only a card's own site or statements count as its transactions, never an aggregator. All of them are used:
+    # rows the same event produced in two of them are one event group, of which counted_records keeps one.
+    per_card = {}
     for s_ in led.get("sources", []):
         if s_["kind"] not in ("bank_card", "statement"):
             continue
@@ -124,28 +124,30 @@ def ledger_transactions(led):
             unit = a.get("unit") or s_.get("unit") or ""
             if not card or card.get("finance_link") or not CURRENCY.match(str(unit)):
                 continue  # a finance app, when linked, stays the source of the card's transactions
-            n = len(rows_of.get((s_["id"], a["id"]), []))
-            if n and (card["id"] not in best or n > best[card["id"]][0]):
-                best[card["id"]] = (n, s_, a)
-    for card_id, (_, s_, a) in sorted(best.items()):
+            if rows_of.get((s_["id"], a["id"])):
+                per_card.setdefault(card["id"], []).append((s_, a, unit))
+    for card_id, parts in sorted(per_card.items()):
         card = cards[card_id]
-        unit = a.get("unit") or s_.get("unit")
-        aid = f"ledger:{s_['id']}/{a['id']}"
-        card["finance_link"] = {"app": "ledger", "account_id": aid, "account_name": a.get("label") or a["id"]}
-        cov = fc.coverage_state(led, s_["id"], a["id"], "activity")
-        covered = (cov or {}).get("covered")
-        accounts[aid] = {"account_id": aid, "name": a.get("label") or a["id"],
-                         "coverage": {"from": covered[0], "to": covered[1]} if covered else {"from": None, "to": None},
-                         "complete": bool(cov and cov["state"] == "complete"),
-                         "coverage_note": None if cov and cov["state"] == "complete" else
-                         "The card's site was not read completely for this period.", "scope": "filtered"}
-        for r in rows_of.get((s_["id"], a["id"]), []):
-            direction = "credit" if r["amount"] > 0 else "debit"
-            txns.append({"id": r["id"], "account_id": aid, "date": r["date"], "posted_date": None,
-                         "amount": abs(float(r["amount"])), "currency": unit, "direction": direction,
-                         "kind": _kind(r["description"], direction), "description": r["description"],
-                         "merchant": None, "category": None, "pending": False, "reversal_of": None,
-                         "reversal_hint": bool(nz.REVERSAL_RE.search(r["description"]))})
+        aid = f"ledger:card:{card_id}"
+        card["finance_link"] = {"app": "ledger", "account_id": aid, "account_name": card.get("nickname") or card_id}
+        covs = [fc.coverage_state(led, s_["id"], a["id"], "activity") for s_, a, _ in parts]
+        full = [c["covered"] for c in covs if c and c["state"] == "complete" and c.get("covered")]
+        anyc = [c["covered"] for c in covs if c and c.get("covered")]
+        span = full or anyc
+        accounts[aid] = {"account_id": aid, "name": card.get("nickname") or card_id,
+                         "coverage": {"from": min(x[0] for x in span), "to": max(x[1] for x in span)} if span
+                         else {"from": None, "to": None},
+                         "complete": bool(full),
+                         "coverage_note": None if full else "The card's own site was not read completely.",
+                         "scope": "filtered"}
+        for s_, a, unit in parts:
+            for r in rows_of[(s_["id"], a["id"])]:
+                direction = "credit" if r["amount"] > 0 else "debit"
+                txns.append({"id": r["id"], "account_id": aid, "date": r["date"], "posted_date": None,
+                             "amount": abs(float(r["amount"])), "currency": unit, "direction": direction,
+                             "kind": _kind(r["description"], direction), "description": r["description"],
+                             "merchant": None, "category": None, "pending": False, "reversal_of": None,
+                             "reversal_hint": bool(nz.REVERSAL_RE.search(r["description"]))})
     return view, accounts, txns
 
 

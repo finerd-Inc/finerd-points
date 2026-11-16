@@ -448,6 +448,11 @@ def analyze(led, catalog, accounts, txns, today, year, only_card=None):
                         contribs = contribs if contribs else [{"id": f"issuer:{issuer['id']}", "date": issuer["as_of"],
                                                                "amount": iv}]
                         confidence = "issuer-reported"
+                later = [c for c in contribs if c.get("date", "") > (said or {}).get("as_of", "9")]
+                if said is not None and later:
+                    notes.append(f"a credit posted after your answer of {said['as_of']}; counted from the bank, "
+                                 f"please confirm")
+                    said = None
                 if said is not None:
                     net = min(float(said["value"]), cap)
                     if float(said["value"]) > cap + EPS:

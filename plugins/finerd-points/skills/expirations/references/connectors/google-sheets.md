@@ -1,11 +1,9 @@
 # Google Sheets (Claude: Google Sheets connector; ChatGPT: Google Drive app)
 
-Use a Sheet as ledger storage only on a platform where the probe passed: create, append,
-literal `=1+1` stays text, update, read back, find again by id in a new conversation.
+A Google Sheet is never where the ledger is kept, and finerd points never writes to one.
 
-- One sheet per ledger; the setup record keeps its link and id. Never create a second one; if a
-  new conversation cannot find it, ask for the link.
-- Write every cell as a literal string (RAW input), never as a formula.
-- At setup, show who can open the sheet: sharing a sheet shares every tab.
-- Until the Sheet layout ships, keep the ledger JSON as the source of truth and use the Sheet as
-  an export: `ledger.py export` → one tab per CSV.
+- **Reading a sheet the person keeps** (their own points tracker): read it through their connector, read
+  only, as a source of `kind: sheet` (`collect`). Columns you cannot map are left out and named.
+- **Getting the ledger into a sheet:** `ledger.py export --folder <folder> --out <empty folder>` writes one
+  CSV per collection (formula-safe); the person imports them into a sheet themselves.
+- Sharing a sheet shares every tab in it; say so when the person mentions sharing.

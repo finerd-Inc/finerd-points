@@ -121,6 +121,28 @@ SOURCE_FORMATS = {"lib": {".py", ".sh"}, "references": {".md"}, "facts": {".json
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 
+def png_ok(data):
+    """A plain PNG: valid chunks up to IEND and nothing after it (no appended archive or script)."""
+    import struct
+    import zlib
+    if not data.startswith(PNG_MAGIC):
+        return False
+    i = len(PNG_MAGIC)
+    while i + 12 <= len(data):
+        n, kind = struct.unpack(">I4s", data[i:i + 8])
+        chunk = data[i + 8:i + 8 + n]
+        crc = data[i + 8 + n:i + 12 + n]
+        if len(chunk) != n or len(crc) != 4 or struct.unpack(">I", crc)[0] != zlib.crc32(kind + chunk) & 0xFFFFFFFF:
+            return False
+        if kind not in (b"IHDR", b"PLTE", b"IDAT", b"IEND", b"tRNS", b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"pHYs",
+                        b"tIME", b"bKGD", b"sBIT"):
+            return False  # no text, metadata or private chunks
+        i += 12 + n
+        if kind == b"IEND":
+            return i == len(data)
+    return False
+
+
 def check():
     problems = []
     for sub, allowed in SOURCE_FORMATS.items():
@@ -131,8 +153,8 @@ def check():
                 problems.append(f"shared/{sub}/{p.relative_to(SHARED / sub)}: only {', '.join(sorted(allowed))} "
                                 f"files belong in shared/{sub}")
     icon = PLUGIN / "assets" / "icon.png"
-    if icon.exists() and not icon.read_bytes().startswith(PNG_MAGIC):
-        problems.append("plugins/finerd-points/assets/icon.png is not a PNG image")
+    if icon.exists() and not png_ok(icon.read_bytes()):
+        problems.append("plugins/finerd-points/assets/icon.png is not a plain PNG (extra chunks or trailing data)")
     for f in ROOT_COPIES:
         if not (PLUGIN / f).exists() or not filecmp.cmp(ROOT / f, PLUGIN / f, shallow=False):
             problems.append(f"plugins/finerd-points/{f} differs from {f}")
@@ -205,7 +227,7 @@ def package(target):
                     continue
             if p.suffix not in ALLOWED_SUFFIXES and p.name not in ("LICENSE", "NOTICE"):
                 sys.exit(f"The {target} build may not carry {rel} (only {', '.join(sorted(ALLOWED_SUFFIXES))})")
-            if p.suffix == ".png" and (str(rel) not in PNG_ALLOWED or not p.read_bytes().startswith(PNG_MAGIC)):
+            if p.suffix == ".png" and (str(rel) not in PNG_ALLOWED or not png_ok(p.read_bytes())):
                 sys.exit(f"The {target} build may not carry {rel}: the only image is the PNG icon")
             data = p.read_bytes()
             if directory is not None and p.suffix == ".md":
