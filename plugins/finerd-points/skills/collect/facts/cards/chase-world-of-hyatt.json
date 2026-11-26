@@ -1,0 +1,260 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "chase-world-of-hyatt",
+  "name": "World of Hyatt Credit Card",
+  "issuer": "Chase",
+  "country": "US",
+  "segment": "personal",
+  "currency": "USD",
+  "rewards_program": "world-of-hyatt",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 95,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The current card launched 2018-06-28; the draft gives no separate start date for the $95 fee.",
+      "sources": [
+        "H1",
+        "H4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "discoverist-status",
+      "name": "Discoverist status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Link a Hyatt account to the card.",
+      "qualifying": "Hyatt loyalty benefits.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Held while the card remains eligible.",
+      "sources": [
+        "H1",
+        "H2"
+      ]
+    },
+    {
+      "id": "annual-elite-night-credits",
+      "name": "Annual elite-night credits",
+      "kind": "other",
+      "amount": null,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "Credited to the primary cardholder's Hyatt account: 5 qualifying nights on opening and each calendar year.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The annual credit generally arrives within 8 weeks of January 1.",
+      "sources": [
+        "H1",
+        "H3"
+      ]
+    },
+    {
+      "id": "spending-elite-night-credits",
+      "name": "Spending elite-night credits",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "2 elite nights per $5,000 of eligible net purchases.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "No annual cap; progress carries across year-end.",
+      "sources": [
+        "H1",
+        "H2"
+      ]
+    },
+    {
+      "id": "dashpass",
+      "name": "DoorDash DashPass",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate with an eligible card by 2027-12-31.",
+      "qualifying": "Eligible DoorDash and Caviar orders; order minimums apply.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "12 complimentary months from one activation. Membership benefit, not a statement credit.",
+      "sources": [
+        "H1"
+      ]
+    },
+    {
+      "id": "doordash-nonrestaurant-discount",
+      "name": "DoorDash nonrestaurant discount",
+      "kind": "other",
+      "amount": 10,
+      "period": "quarter",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an active eligible DashPass; select the promotion.",
+      "qualifying": "Eligible grocery, retail and other nonrestaurant orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Unused amount expires each quarter. Applied at checkout, so the bank sees the net charge.",
+      "sources": [
+        "H1"
+      ]
+    },
+    {
+      "id": "early-award-booking",
+      "name": "Early award booking",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Linked eligible Hyatt account.",
+      "qualifying": "Eligible Hyatt award inventory, bookable up to 13 months ahead.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": "2026-06-30",
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "H5",
+        "H6"
+      ]
+    }
+  ],
+  "certificates": [
+    {
+      "id": "anniversary-free-night",
+      "name": "Anniversary free night",
+      "trigger": "card_anniversary",
+      "spend_threshold": null,
+      "value_cap": "One night in a Category 1-4 standard room; not a fixed points allowance, and points cannot be added to make it a Category 5 certificate.",
+      "valid_months": 12,
+      "note": "Issued each card anniversary to the linked Hyatt account; allow up to about 10 weeks. Eligible standard-room award inventory only; excluded properties and brands apply; the stay must be completed within validity.",
+      "sources": [
+        "H1",
+        "H2",
+        "H3"
+      ]
+    },
+    {
+      "id": "spending-free-night",
+      "name": "Spending free night",
+      "trigger": "spend_threshold",
+      "spend_threshold": 15000,
+      "value_cap": "One night in a Category 1-4 standard room; not a fixed points allowance, and points cannot be added to make it a Category 5 certificate.",
+      "valid_months": 12,
+      "note": "Earned at $15,000 of eligible net purchases in a calendar year (spend resets January 1); allow up to about 8 weeks after qualifying. Same use rules as the anniversary night.",
+      "sources": [
+        "H1",
+        "H2",
+        "H3"
+      ]
+    }
+  ],
+  "thresholds": [
+    {
+      "id": "15k-free-night",
+      "spend": 15000,
+      "period": "calendar_year",
+      "unlocks": "One additional Category 1-4 free night.",
+      "sources": [
+        "H1",
+        "H2"
+      ]
+    },
+    {
+      "id": "5k-elite-nights",
+      "spend": 5000,
+      "period": "ongoing",
+      "unlocks": "2 qualifying Hyatt elite nights per $5,000 of eligible net purchases; no annual cap, and the progress counter carries over across year-end (unlike the business card's calendar-year counter).",
+      "sources": [
+        "H1",
+        "H2"
+      ]
+    }
+  ],
+  "disagreements": [],
+  "upcoming_changes": [],
+  "sources": {
+    "H1": {
+      "title": "World of Hyatt Credit Card product and offer terms",
+      "url": "https://creditcards.chase.com/travel-credit-cards/world-of-hyatt-credit-card",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "H2": {
+      "title": "World of Hyatt Credit Card review",
+      "url": "https://onemileatatime.com/reviews/credit-cards/chase/hyatt-credit-card/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-08-20",
+      "checked_on": "2026-11-02"
+    },
+    "H3": {
+      "title": "World of Hyatt Credit Card review",
+      "url": "https://www.nerdwallet.com/credit-cards/reviews/world-of-hyatt",
+      "publisher": "NerdWallet",
+      "kind": "review",
+      "published": "2026-09-14",
+      "checked_on": "2026-11-02"
+    },
+    "H4": {
+      "title": "World of Hyatt Credit Card launch coverage",
+      "url": "https://frequentmiler.com/world-of-hyatt-credit-card-launched/",
+      "publisher": "Frequent Miler",
+      "kind": "review",
+      "published": "2018-06-28",
+      "checked_on": "2026-11-02"
+    },
+    "H5": {
+      "title": "World of Hyatt program terms",
+      "url": "https://www.hyatt.com/help/terms/world-of-hyatt?cat_id=90000789&content_id=90005278",
+      "publisher": "World of Hyatt",
+      "kind": "program",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "H6": {
+      "title": "World of Hyatt early award night access",
+      "url": "https://onemileatatime.com/news/world-of-hyatt-early-award-night-access/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  }
+}

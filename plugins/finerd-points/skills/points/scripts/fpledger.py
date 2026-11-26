@@ -37,13 +37,17 @@ import tempfile
 from pathlib import Path
 
 FORMAT = "finerd-points-ledger"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 LEASE_MINUTES = 30
 
 COLLECTIONS = (
     "people", "cards", "accounts", "observations", "corrections", "redemptions",
     "costs", "certificates", "signup_offers", "calendar_events", "oplog",
+    # schema 2 (spec v2, appendix D)
+    "inventory", "sources", "records", "events", "commits",
 )
+V2_COLLECTIONS = ("inventory", "sources", "records", "events", "commits")
+RECORD_KEY = {"oplog": "op_id", "commits": "commit_id"}
 
 # Source order per field: earlier = stronger evidence (spec «Why the numbers can be trusted»).
 SOURCE_ORDER = {
@@ -75,6 +79,9 @@ class LedgerError(Exception):
 # Keys whose values are identifiers (bank or app ids), never scanned as card numbers.
 ID_KEYS = {"id", "ref", "op_id", "event_id", "destination_id", "account_id", "transaction_id", "target",
            "subject", "ledger_id", "match_key", "calendar_id", "observation"}
+# In schema-2 operations these keys hold generated or site ids, never free text (v1 «source» is free text).
+ID_KEYS_V2 = ID_KEYS | {"site_id", "read_id", "commit_id", "record", "link", "a", "b", "source", "account",
+                        "inventory"}
 SECRET_KEYS = re.compile(r"(?i)^(password|passcode|pin|otp|one[_ -]?time[_ -]?code|cvv|cvc|security[_ -]?code|"
                          r"api[_ -]?key|secret|token|access[_ -]?token|refresh[_ -]?token|ssn|"
                          r"social[_ -]?security|passport|member[_ -]?number|account[_ -]?number|card[_ -]?number)$")
@@ -117,32 +124,33 @@ def _has_card_number(text):
     return False
 
 
-def scan_forbidden(obj, _key=None):
+def scan_forbidden(obj, _key=None, id_keys=None):
     """Return the kinds of data in obj that must never be stored (spec appendix F)."""
+    id_keys = ID_KEYS if id_keys is None else id_keys
     found = set()
     if isinstance(obj, dict):
         for k, v in obj.items():
             if SECRET_KEYS.match(str(k)) and v not in (None, "", False):
                 found.add("a password, code, key or ID number")
-            found |= set(scan_forbidden(v, str(k)))
-            found |= set(scan_forbidden(str(k)))
+            found |= set(scan_forbidden(v, str(k), id_keys))
+            found |= set(scan_forbidden(str(k), None, id_keys))
         return sorted(found)
     if isinstance(obj, list):
         for v in obj:
-            found |= set(scan_forbidden(v, _key))
+            found |= set(scan_forbidden(v, _key, id_keys))
         return sorted(found)
     if not isinstance(obj, str):
         return []
     for rx, why in SECRET_TEXT:
         if rx.search(obj):
             found.add(why)
-    if (_key not in ID_KEYS) and _has_card_number(obj):
+    if (_key not in id_keys) and _has_card_number(obj):
         found.add("a full card number")
     return sorted(found)
 
 
-def _refuse_forbidden(obj, where):
-    bad = scan_forbidden(obj)
+def _refuse_forbidden(obj, where, id_keys=None):
+    bad = scan_forbidden(obj, None, id_keys)
     if bad:
         raise LedgerError(f"{where} contains {', '.join(bad)}. Remove it; finerd points never stores card "
                           f"numbers, passwords, codes, keys, member numbers or ID numbers.")
@@ -192,9 +200,14 @@ def _num(v, allow_none=False, minimum=0):
 
 # ---------------------------------------------------------------- create / load / save
 
+CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
+
+
 def new_ledger(person_name, currency="USD", timezone="UTC", storage="file",
                household_mode="single", person_id="me"):
     _refuse_forbidden({"name": person_name}, "The name")
+    if not CURRENCY_RE.match(str(currency)):
+        raise LedgerError("The report currency is a three-letter code such as USD or EUR.")
     ts = iso(now_utc())
     led = {
         "format": FORMAT,
@@ -249,6 +262,8 @@ def validate(led):
     for k in ("report_currency", "timezone", "storage"):
         if not meta["setup"].get(k):
             raise LedgerError(f"The ledger's setup record has no {k}.")
+    if not CURRENCY_RE.match(str(meta["setup"]["report_currency"])):
+        raise LedgerError("The ledger's report currency is not a three-letter code.")
     meta.setdefault("redactions", [])
     meta["settings"].setdefault("credit_values", {})
     for c in COLLECTIONS:
@@ -256,7 +271,7 @@ def validate(led):
             raise LedgerError(f"The ledger is missing its {c} list.")
     ids = set()
     for c in COLLECTIONS:
-        key = "op_id" if c == "oplog" else "id"
+        key = RECORD_KEY.get(c, "id")
         for rec in led[c]:
             rid = rec.get(key) if isinstance(rec, dict) else None
             if not rid:
@@ -270,34 +285,127 @@ def validate(led):
 
 
 def migrate(led):
-    """Forward-only schema migrations. Returns (ledger, migrated?)."""
+    """Forward-only schema migrations, in memory. Returns (ledger, migrated?). The version the migration
+    replaces is kept by bin/commit's backup when the migrated ledger is first published (spec v2, appendix D)."""
     v = led.get("schema_version")
     if v == SCHEMA_VERSION:
         return led, False
+    if v == 1:
+        for c in V2_COLLECTIONS:
+            led.setdefault(c, [])
+        led["schema_version"] = 2
+        led.setdefault("_meta", {}).setdefault("migrations", []).append({"from": 1, "to": 2, "at": iso(now_utc())})
+        return led, True
     raise LedgerError(f"No migration path from schema {v} to {SCHEMA_VERSION}.")
+
+
+def loads(text):
+    """Parse, migrate and validate a ledger. Free text never makes loading fail (spec v2, appendix C): run
+    `forbidden_report` to show the person anything that should not be there."""
+    try:
+        led = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise LedgerError(f"The ledger file is damaged (invalid JSON at line {e.lineno}).")
+    if not isinstance(led, dict):
+        raise LedgerError("This file is not a finerd points ledger.")
+    if isinstance(led.get("schema_version"), int) and led["schema_version"] > SCHEMA_VERSION:
+        validate(led)  # raises the «newer finerd points» message
+    led, _ = migrate(led)
+    validate(led)
+    keys = _secret_keys({**{k: led[k] for k in COLLECTIONS}, "_meta": led["_meta"]})
+    if keys:
+        raise LedgerError(f"This ledger file has field(s) named {', '.join(sorted(keys))} with values in them. "
+                          f"finerd points never keeps passwords, codes, keys or ID numbers; remove those fields "
+                          f"from the file before using it.")
+    return led
+
+
+def _secret_keys(obj):
+    """Structured fields that may only exist empty (password, card_number…). Free text is not checked here."""
+    found = set()
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if SECRET_KEYS.match(str(k)) and v not in (None, "", False):
+                found.add(str(k))
+            found |= _secret_keys(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            found |= _secret_keys(v)
+    return found
 
 
 def load(path):
     p = Path(path)
     try:
-        led = json.loads(p.read_text(encoding="utf-8"))
+        text = p.read_text(encoding="utf-8")
     except FileNotFoundError:
         raise LedgerError(f"No ledger at {p}. Ask the person for their ledger file or setup record; "
                           f"never create a second ledger without asking.")
-    except json.JSONDecodeError as e:
-        raise LedgerError(f"The ledger file is damaged (invalid JSON at line {e.lineno}).")
-    if not isinstance(led, dict):
-        raise LedgerError("This file is not a finerd points ledger.")
-    led, migrated = migrate(led)
-    if migrated:
-        backup = p.with_suffix(p.suffix + f".v{led['version']}.bak")
-        backup.write_text(p.read_text(encoding="utf-8"), encoding="utf-8")
-    validate(led)
-    bad = scan_forbidden({**{k: led[k] for k in COLLECTIONS}, "_meta": led["_meta"]})
+    return loads(text)
+
+
+def forbidden_report(led):
+    """Where the ledger holds something finerd points never keeps: [(collection, record id, kinds)]."""
+    out = []
+    for c in COLLECTIONS:
+        key = RECORD_KEY.get(c, "id")
+        for rec in led.get(c, []):
+            bad = scan_forbidden(rec)
+            if bad:
+                out.append((c, rec.get(key), bad))
+    bad = scan_forbidden(led.get("_meta", {}))
     if bad:
-        raise LedgerError(f"This ledger file contains {', '.join(bad)}. Remove it from the file before using it; "
-                          f"finerd points never keeps such data.")
-    return led
+        out.append(("_meta", None, bad))
+    return out
+
+
+CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
+MARKUP = re.compile(r"<[^>]{0,200}>|\[([^\]]{0,200})\]\([^)]{0,500}\)|```|`")
+
+
+URL_TAIL = re.compile(r"(?i)\b((?:https?://|www\.)[^\s?#<>\"']+)[?#][^\s<>\"']*")
+KV_SECRET = re.compile(r"(?i)\b[\w.-]*(token|secret|passw(or)?d|session|sid|sig(nature)?|auth|code|key|otp|"
+                       r"ticket|nonce|jwt|bearer)[\w.-]*\s*[=:]\s*[^\s&;,]{6,}")
+BEARER = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{12,}")
+
+
+def redact_text(text):
+    """Remove what must never be stored from free text. Returns (clean text, kinds removed)."""
+    kinds = set()
+    if URL_TAIL.search(text):
+        kinds.add("a link's query or fragment")
+        text = URL_TAIL.sub(lambda m: m.group(1), text)
+    for rx in (BEARER, KV_SECRET):
+        if rx.search(text):
+            kinds.add("a token or code")
+            text = rx.sub("[removed]", text)
+    for rx, why in SECRET_TEXT:
+        if rx.search(text):
+            kinds.add(why)
+            text = rx.sub("[removed]", text)
+
+    def card(m):
+        raw = m.group(0)
+        digits = re.sub(r"\D", "", raw)
+        if not DATE_INSIDE.search(raw) and 13 <= len(digits) <= 19 and len(set(digits)) > 1 and _luhn_ok(digits):
+            kinds.add("a full card number")
+            return "[removed]"
+        return raw
+    text = CARD_CANDIDATE.sub(card, text)
+    return text, sorted(kinds)
+
+
+def clean_text(text, limit=300):
+    """Free text from pages, emails, files or the person, as stored: control characters and markup removed,
+    identifiers redacted, whitespace collapsed, length capped (spec v2, appendix B «Untrusted content»)."""
+    if text is None:
+        return ""
+    text = str(text)
+    text = CONTROL.sub(" ", text)
+    text = MARKUP.sub(lambda m: m.group(1) or " ", text)
+    text, _ = redact_text(text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:limit]
 
 
 class _Lock:
@@ -333,9 +441,17 @@ def _atomic_write(p, led):
     os.replace(tmp, p)
 
 
+def _refuse_folder_ledger(p, led):
+    """A ledger in a folder is replaced only by bin/commit (spec v2, appendix E); these v1 file writes refuse it."""
+    if led.get("_meta", {}).get("setup", {}).get("storage") == "folder" or (p.parent / "bin" / "commit").exists():
+        raise LedgerError("This ledger lives in a ledger folder and is written only through bin/commit "
+                          "(ledger.py apply --folder …).")
+
+
 def create(path, led):
     """Write a brand-new ledger as version 1; refuses if anything already exists at path."""
     p = Path(path)
+    _refuse_folder_ledger(p, led)
     validate(led)
     led["version"] = 1
     with _Lock(p):
@@ -355,6 +471,7 @@ def save(path, led, base_version):
     or an older copy is being saved over a newer one).
     """
     p = Path(path)
+    _refuse_folder_ledger(p, led)
     validate(led)
     with _Lock(p):
         if p.exists():
@@ -510,7 +627,8 @@ ALLOWED = {
                  "source", "redemption", "fx_rate", "fx_source", "note"},
     "add_certificate": {"id", "account", "type", "issued_on", "expires_on", "value_cap", "source", "note"},
     "add_signup_offer": {"id", "card", "bonus", "spend", "deadline", "start_date", "source", "note"},
-    "observe": {"subject", "field", "value", "source", "as_of", "confidence", "method", "note", "unit", "person"},
+    "observe": {"subject", "field", "value", "source", "as_of", "confidence", "method", "note", "unit", "person",
+                "caveat"},
     "void": {"target", "reason", "by"},
     "set_setting": {"key", "value"},
     "set_setup": {"key", "value"},
@@ -534,7 +652,7 @@ REDEMPTION_STATUS = ("booked", "cancelled", "cancelled_with_fee")
 SETTINGS_KEYS = ("foregone_cashback_rate", "foregone_cashback_exclusions", "calendar_min_value",
                  "reminder_days_before", "stale_after_days", "credit_values")
 SETUP_KEYS = ("storage", "location", "calendar_id", "timezone", "household_mode", "report_currency",
-              "finance_app", "first_run_notice_shown")
+              "finance_app", "first_run_notice_shown", "history_from")
 # Keys a destination must echo back before a write counts as confirmed.
 READBACK_KEYS = {
     "calendar": ("title", "date", "reminder_minutes", "visibility"),
@@ -573,8 +691,45 @@ def _check_value(op, i, k):
         raise LedgerError(f"Step {i + 1}: last4 must be exactly four digits.")
 
 
+EXTRA_OPS = {}  # name → {"check", "apply", "describe"}; schema-2 operations register here (fpcollect.py)
+
+
+def register_op(name, required, allowed, check, apply, describe):
+    REQUIRED[name] = tuple(required)
+    ALLOWED[name] = set(allowed)
+    EXTRA_OPS[name] = {"check": check, "apply": apply, "describe": describe}
+
+
+def _persons_named(obj):
+    out = set()
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == "person" and isinstance(v, str):
+                out.add(v)
+            out |= _persons_named(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            out |= _persons_named(v)
+    return out
+
+
 def _check_op(led, op, i, staged_ids):
     kind = op.get("op") if isinstance(op, dict) else None
+    if led["_meta"].get("redactions") and isinstance(op, dict) and names_removed(op, _removed_refs(led)):
+        raise LedgerError(f"Step {i + 1}: this change names a household member, or a card, account or row, whose data "
+                          f"was removed at their request; it cannot bring that data back.")
+    if kind in EXTRA_OPS:
+        missing = [k for k in REQUIRED[kind] if op.get(k) in (None, "")]
+        if missing:
+            raise LedgerError(f"Step {i + 1} ({kind}): missing {', '.join(missing)}.")
+        unknown = sorted(set(op) - ALLOWED[kind] - {"op"})
+        if unknown:
+            raise LedgerError(f"Step {i + 1} ({kind}): unknown field(s) {', '.join(unknown)}.")
+        if _secret_keys(op):
+            raise LedgerError(f"Step {i + 1} ({kind}): passwords, codes, keys and ID numbers are never stored.")
+        _refuse_forbidden(op, f"Step {i + 1} ({kind})", ID_KEYS_V2)
+        EXTRA_OPS[kind]["check"](led, op, i, staged_ids)
+        return
     if kind not in REQUIRED:
         raise LedgerError(f"Step {i + 1}: unknown operation {kind!r}.")
     missing = [k for k in REQUIRED[kind] if op.get(k) in (None, "")]
@@ -623,6 +778,8 @@ def _check_op(led, op, i, staged_ids):
             raise LedgerError(f"Step {i + 1}: {op['field']} values are dates, YYYY-MM-DD.")
         if op["field"] in ("balance", "credited", "used_amount") and not _num(op["value"]):
             raise LedgerError(f"Step {i + 1}: {op['field']} must be a number of 0 or more.")
+        if op.get("caveat") not in (None, "may_lag"):
+            raise LedgerError(f"Step {i + 1}: caveat is may_lag (the issuer's tracker says it may lag) or absent.")
     elif kind == "void":
         if not any(o["id"] == op["target"] for o in led["observations"]):
             raise LedgerError(f"Step {i + 1}: observation {op['target']} not found.")
@@ -661,6 +818,8 @@ def _check_op(led, op, i, staged_ids):
     elif kind == "set_setup":
         if op["key"] not in SETUP_KEYS:
             raise LedgerError(f"Step {i + 1}: setup key must be one of {', '.join(SETUP_KEYS)}.")
+        if op["key"] == "report_currency" and not CURRENCY_RE.match(str(op["value"])):
+            raise LedgerError(f"Step {i + 1}: the report currency is a three-letter code such as USD.")
         if op["key"] == "storage" and op["value"] not in ("file", "folder"):
             raise LedgerError(f"Step {i + 1}: storage is file or folder; a Google Sheet is an export until the "
                               f"platform probe passes.")
@@ -771,7 +930,8 @@ def preview_batch(led, batch):
     groups = {}
     for op in batch:
         dest = "this ledger" if op["op"] != "external" else (op.get("app") or op["target"])
-        groups.setdefault(dest, []).append(_describe(led, op))
+        text = EXTRA_OPS[op["op"]]["describe"](led, op) if op["op"] in EXTRA_OPS else _describe(led, op)
+        groups.setdefault(dest, []).append(text)
     lines = [f"Planned changes (ledger version {led['version']}):"]
     for dest, items in groups.items():
         lines.append(f"\nIn {dest}:")
@@ -782,11 +942,14 @@ def preview_batch(led, batch):
     return h, "\n".join(lines)
 
 
-def apply_batch(led, batch, confirm_hash, session, now=None):
+def apply_batch(led, batch, confirm_hash, session=None, now=None):
     """Apply a previewed batch to the in-memory ledger. Returns a list of results.
     External operations are only recorded as planned; the skill performs them
-    through the person's connector and then records sent/confirmed."""
-    require_lease(led, session, now)
+    through the person's connector and then records sent/confirmed.
+    A ledger in a folder is guarded by bin/commit (lock and base hash), so it needs no lease;
+    a ledger file still needs the v1 writer lease."""
+    if led["_meta"]["setup"].get("storage") != "folder":
+        require_lease(led, session, now)
     h, _ = preview_batch(led, batch)
     if confirm_hash != h:
         raise LedgerError("This batch is not the one the person saw (hash mismatch). Show the preview again.")
@@ -794,6 +957,9 @@ def apply_batch(led, batch, confirm_hash, session, now=None):
     results = []
     for op in batch:
         k = op["op"]
+        if k in EXTRA_OPS:
+            results.append(EXTRA_OPS[k]["apply"](led, op, ts))
+            continue
         if k in RECORD_OPS:
             rec = {key: val for key, val in op.items() if key != "op"}
             rec["added_at"] = ts
@@ -801,7 +967,7 @@ def apply_batch(led, batch, confirm_hash, session, now=None):
             results.append({"op": k, "id": rec["id"]})
         elif k == "observe":
             rec = {key: op[key] for key in ("subject", "field", "value", "source", "as_of", "confidence")}
-            for opt in ("method", "note", "unit", "person"):
+            for opt in ("method", "note", "unit", "person", "caveat"):
                 if op.get(opt) is not None:
                     rec[opt] = op[opt]
             rec["id"] = new_id("obs")
@@ -826,27 +992,31 @@ def apply_batch(led, batch, confirm_hash, session, now=None):
             led["_meta"]["setup"][op["key"]] = op["value"]
             results.append({"op": k, "key": op["key"]})
         elif k == "external":
-            base = external_op_id(op)
-            prev = _latest_op(led, base)
-            if prev and prev["state"] in ("confirmed", "sent", "planned", "unknown"):
-                results.append({"op": k, "op_id": prev["op_id"], "state": prev["state"], "skipped": True})
-                continue
-            op_id = base
-            retry_of = None
-            if prev and prev["state"] == "failed":
-                n = sum(1 for x in led["oplog"] if x["op_id"] == base or x.get("retry_of") == base)
-                op_id, retry_of = f"{base}-r{n + 1}", base
-            entry = {
-                "op_id": op_id, "target": op["target"], "app": op.get("app"), "action": op["action"],
-                "summary": op["summary"], "payload": op["payload"], "payload_hash": sha(op["payload"]),
-                "subject": op.get("subject"), "state": "planned", "destination_id": None,
-                "created_at": ts, "updated_at": ts, "history": [{"state": "planned", "at": ts}],
-            }
-            if retry_of:
-                entry["retry_of"] = retry_of
-            led["oplog"].append(entry)
-            results.append({"op": k, "op_id": op_id, "state": "planned"})
+            results.append(_plan_external(led, op, ts))
     return results
+
+
+def _plan_external(led, op, ts):
+    """Record an external write as planned (or recognize one already planned or done)."""
+    base = external_op_id(op)
+    prev = _latest_op(led, base)
+    if prev and prev["state"] in ("confirmed", "sent", "planned", "unknown"):
+        return {"op": "external", "op_id": prev["op_id"], "state": prev["state"], "skipped": True}
+    op_id = base
+    retry_of = None
+    if prev and prev["state"] == "failed":
+        n = sum(1 for x in led["oplog"] if x["op_id"] == base or x.get("retry_of") == base)
+        op_id, retry_of = f"{base}-r{n + 1}", base
+    entry = {
+        "op_id": op_id, "target": op["target"], "app": op.get("app"), "action": op["action"],
+        "summary": op["summary"], "payload": op["payload"], "payload_hash": sha(op["payload"]),
+        "subject": op.get("subject"), "state": "planned", "destination_id": None,
+        "created_at": ts, "updated_at": ts, "history": [{"state": "planned", "at": ts}],
+    }
+    if retry_of:
+        entry["retry_of"] = retry_of
+    led["oplog"].append(entry)
+    return {"op": "external", "op_id": op_id, "state": "planned"}
 
 
 # ---------------------------------------------------------------- external op states
@@ -893,8 +1063,9 @@ def _readback_problems(op, read_back, destination_id):
     return probs
 
 
-def set_op_state(led, op_id, state, session, destination_id=None, read_back=None, error=None, now=None):
-    require_lease(led, session, now)
+def set_op_state(led, op_id, state, session=None, destination_id=None, read_back=None, error=None, now=None):
+    if led["_meta"]["setup"].get("storage") != "folder":
+        require_lease(led, session, now)
     if state not in OP_STATES:
         raise LedgerError(f"State must be one of {', '.join(OP_STATES)}.")
     op = next((x for x in led["oplog"] if x["op_id"] == op_id), None)
@@ -992,6 +1163,10 @@ def _owned_subjects(led, person_id):
     return cards, accounts, owned
 
 
+def _word_in(name, text):
+    return bool(name) and len(str(name)) >= 3 and re.search(r"(?<!\w)" + re.escape(str(name)) + r"(?!\w)", text) is not None
+
+
 def redaction_plan(led, person_id):
     """What a member's privacy withdrawal would remove from the current ledger."""
     if person_id == next((p["id"] for p in led["people"] if p.get("role") == "owner"), None):
@@ -1029,8 +1204,20 @@ def redaction_plan(led, person_id):
                                   if owned(e.get("subject")) or any(owned(m) for m in e.get("members") or [])),
         "oplog": sorted(x["op_id"] for x in led["oplog"]
                         if owned(x.get("subject")) or any(owned(m) for m in (x["payload"].get("members") or []))
-                        or any(n and n in canonical(x) for n in names)),
+                        or any(_word_in(n, canonical(x)) for n in names if n and len(str(n)) >= 3)),
     }
+    # schema 2: what was collected from sites for this person
+    src_accounts = sorted(f"{s_['id']}/{a['id']}" for s_ in led.get("sources", []) for a in s_["accounts"]
+                          if a.get("person") == person_id)
+    owned_acc = set(src_accounts)
+    recs = sorted(r["id"] for r in led.get("records", []) if f"{r['source']}/{r['account']}" in owned_acc)
+    rset = set(recs)
+    plan.update({
+        "inventory": sorted(x["id"] for x in led.get("inventory", []) if x.get("person") == person_id),
+        "source_accounts": src_accounts,
+        "records": recs,
+        "events": sorted(e["id"] for e in led.get("events", []) if set(e.get("records", [])) & rset),
+    })
     text = [f"Removing {person_id}'s data from the current ledger:"]
     for k, v in plan.items():
         if v and k not in ("calendar_events", "oplog", "_names"):
@@ -1041,37 +1228,19 @@ def redaction_plan(led, person_id):
         text.append(f"  calendar events to clear (details and reminders removed, events kept): {len(plan['calendar_events'])}")
     text.append("Not changed: earlier exports or copies of this file, copies in old conversations, and anything "
                 "in finance apps. The person deletes those themselves.")
-    plan["_names"] = sorted({n for n in names if n})
+    plan["_names"] = sorted({n for n in names if n and len(str(n)) >= 3})
     h = sha({"ledger": led["ledger_id"], "base": led["version"], "plan": plan})
     text.append(f"Redaction {h}")
     return h, plan, "\n".join(text)
 
 
-def redact_person(led, person_id, confirm_hash, session, now=None):
-    require_lease(led, session, now)
+def redact_person(led, person_id, confirm_hash, session=None, now=None):
+    if led["_meta"]["setup"].get("storage") != "folder":
+        require_lease(led, session, now)
     h, plan, _ = redaction_plan(led, person_id)
     if h != confirm_hash:
         raise LedgerError("This is not the removal the person saw (hash mismatch). Show the plan again.")
-    for coll in ("people", "cards", "accounts", "observations", "redemptions", "costs", "certificates", "signup_offers"):
-        drop = set(plan[coll])
-        led[coll] = [r for r in led[coll] if r["id"] not in drop]
-    dropped_obs = set(plan["observations"])
-    led["corrections"] = [c for c in led["corrections"] if c["target"] not in dropped_obs]
-    names = plan.get("_names", [])
-    for coll in COLLECTIONS:
-        for rec in led[coll]:
-            for a in rec.get("amendments", []) if isinstance(rec, dict) else []:
-                text = canonical([a.get("old"), a.get("new"), a.get("reason")])
-                if person_id in (a.get("old"), a.get("new")) or any(n and n in text for n in names):
-                    a["old"] = a["new"] = "(removed at a household member's request)"
-                    a["reason"] = "(removed)"
-    for x in led["oplog"]:
-        if x["op_id"] in plan["oplog"]:
-            x["summary"] = "(removed at a household member's request)"
-            x["payload"] = {"redacted": True}
-            x.pop("read_back", None)
-            x.pop("error", None)
-            x["subject"] = None
+    apply_redaction(led, person_id, plan)
     ts = iso(now or now_utc())
     ops = []
     for ev in led["calendar_events"]:
@@ -1086,8 +1255,113 @@ def redact_person(led, person_id, confirm_hash, session, now=None):
             ev["members"] = []
             ev["title"] = "finerd points (removed)"
             ev["description"] = ""
-    led["_meta"]["redactions"].append({"at": ts, "counts": {k: len(v) for k, v in plan.items() if k != "_names"}})
+    for op in ops:  # the person agreed to clearing these events with the removal: planned in the same commit
+        _plan_external(led, op, ts)
+    led["_meta"]["redactions"].append({"at": ts, "person": person_id, "files_scrubbed": False,
+                                       "removed": tombstones(plan),
+                                       "counts": {k: len(v) for k, v in plan.items() if k != "_names"}})
     return ops
+
+
+def tombstones(plan):
+    """The ids a removal took away; no later change may name them again (no replay brings data back)."""
+    return {k: sorted(plan.get(k, [])) for k in ("cards", "accounts", "records", "inventory", "source_accounts",
+                                                   "certificates", "signup_offers", "redemptions", "costs")}
+
+
+def _removed_refs(led):
+    out = {"person": set(), "card": set(), "account": set(), "record": set(), "inventory": set(),
+           "source_account": set(), "certificate": set(), "signup": set(), "other": set()}
+    for r in led["_meta"].get("redactions", []):
+        if r.get("person"):
+            out["person"].add(r["person"])
+        t = r.get("removed") or {}
+        out["card"].update(t.get("cards", []))
+        out["account"].update(t.get("accounts", []))
+        out["record"].update(t.get("records", []))
+        out["inventory"].update(t.get("inventory", []))
+        out["source_account"].update(t.get("source_accounts", []))
+        out["certificate"].update(t.get("certificates", []))
+        out["signup"].update(t.get("signup_offers", []))
+        out["other"].update(t.get("redemptions", []) + t.get("costs", []))
+    return out
+
+
+def names_removed(op, refs):
+    """True when an operation names a removed person or anything a removal took away, directly or through a
+    subject such as benefit:<card>/…, account:<id> or certificate:<id>."""
+    if not isinstance(op, dict):
+        return False
+    if _persons_named(op) & refs["person"] or (op.get("op") == "add_person" and op.get("id") in refs["person"]):
+        return True
+    ids = refs["card"] | refs["account"] | refs["record"] | refs["inventory"] | refs["certificate"] | \
+        refs["signup"] | refs["other"]
+
+    def walk(x, key=None):
+        if isinstance(x, dict):
+            if "source" in x and "account" in x and f"{x.get('source')}/{x.get('account')}" in refs["source_account"]:
+                return True
+            return any(walk(v, k) for k, v in x.items())
+        if isinstance(x, list):
+            return any(walk(v, key) for v in x)
+        if isinstance(x, str):
+            if key in ("id", "card", "account", "record", "a", "b", "inventory", "target", "redemption") and x in ids:
+                return True
+            m = re.match(r"^(card|account|benefit|certificate|signup):([^/]+)", x)
+            if m and m.group(2) in ids:
+                return True
+        return False
+    return walk(op)
+
+
+def apply_redaction(led, person_id, plan=None):
+    """Remove a household member's data from a ledger (the current one, a backup or a candidate). The
+    person's confirmation is checked by redact_person for the current ledger; older copies in the
+    ledger folder are scrubbed with the same plan by fpstore.scrub_person."""
+    if plan is None:
+        if not any(p["id"] == person_id for p in led["people"]):
+            plan = {k: [] for k in ("people", "cards", "accounts", "observations", "redemptions", "costs",
+                                    "certificates", "signup_offers", "calendar_events", "oplog", "inventory",
+                                    "source_accounts", "records", "events")}
+            plan["_names"] = []
+            src = {f"{s_['id']}/{a['id']}" for s_ in led.get("sources", []) for a in s_["accounts"]
+                   if a.get("person") == person_id}
+            plan["source_accounts"] = sorted(src)
+            plan["records"] = [r["id"] for r in led.get("records", []) if f"{r['source']}/{r['account']}" in src]
+            plan["inventory"] = [x["id"] for x in led.get("inventory", []) if x.get("person") == person_id]
+        else:
+            _, plan, _ = redaction_plan(led, person_id)
+    for coll in ("people", "cards", "accounts", "observations", "redemptions", "costs", "certificates", "signup_offers",
+                 "inventory", "records", "events"):
+        drop = set(plan.get(coll, []))
+        if coll in led:
+            led[coll] = [r for r in led[coll] if r["id"] not in drop]
+    gone = set(plan.get("source_accounts", []))
+    keep_sources = []
+    for s_ in led.get("sources", []):
+        s_["accounts"] = [a for a in s_["accounts"] if f"{s_['id']}/{a['id']}" not in gone]
+        s_["coverage"] = [c for c in s_.get("coverage", []) if f"{s_['id']}/{c['account']}" not in gone]
+        if s_["accounts"]:
+            keep_sources.append(s_)
+    if "sources" in led:
+        led["sources"] = keep_sources
+    dropped_obs = set(plan["observations"])
+    led["corrections"] = [c for c in led.get("corrections", []) if c["target"] not in dropped_obs]
+    names = plan.get("_names", [])
+    for coll in COLLECTIONS:
+        for rec in led.get(coll, []):
+            for a in rec.get("amendments", []) if isinstance(rec, dict) else []:
+                text = canonical([a.get("old"), a.get("new"), a.get("reason")])
+                if person_id in (a.get("old"), a.get("new")) or any(_word_in(n, text) for n in names):
+                    a["old"] = a["new"] = "(removed at a household member's request)"
+                    a["reason"] = "(removed)"
+    for x in led["oplog"]:
+        if x["op_id"] in plan["oplog"]:
+            x["summary"] = "(removed at a household member's request)"
+            x["payload"] = {"redacted": True}
+            x.pop("read_back", None)
+            x.pop("error", None)
+            x["subject"] = None
 
 
 # ---------------------------------------------------------------- export

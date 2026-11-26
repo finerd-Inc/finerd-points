@@ -1,8 +1,9 @@
 # Directory listings (English base listing)
 
-Limits checked by `tools/check_listing.py`. Both directories get the same plugin folder; the
-Claude directory gets the `claude-directory` build (connector guides limited to Google, finerd and
-CSV, rule 3.F), ChatGPT gets the `chatgpt` build.
+Limits checked by `tools/check_listing.py`. The Claude directory gets the `claude-directory` build
+(the same skills, browser reading included — option A, Rad 16 November 2026; app skills limited to
+finerd, the publisher's own connector; no short paths). The ChatGPT build and its scope are decided
+when that submission is prepared.
 
 ## Fields
 
@@ -20,38 +21,40 @@ CSV, rule 3.F), ChatGPT gets the `chatgpt` build.
 
 ## Description
 
-Keep your credit-card credits, points and miles under control inside your AI assistant. finerd
-points finds which card credits you have used and which are still open this month, lists what
-expires soon and can put those deadlines into your calendar, shows every balance with its date
-and source, and builds a Year in Review of your points game by a published accounting method:
-cash avoided at the price you would really have paid, minus purchased points, annual fees, tools
-and the cash back you gave up.
+Collect all your points, miles and card credits in your AI assistant and see where you stand. Open any
+bank, card or loyalty program site — in any country — or AwardWallet or your own spreadsheet, sign in
+yourself, and finerd points reads what matters: balances with their dates, activity, card credits and
+how much of each you have used, certificates and deadlines. It keeps everything in a ledger on your own
+computer and shows you a report: every balance with its date and source, the credits still open and
+their deadlines, what expires soon, and a Year in Review of your points game by a published accounting
+method.
 
-It is a set of skills, not a service. There is no server: your ledger stays in a file or a folder you
-own. It reads only what you connect or paste — transactions from your
-finance app (finerd or a CSV export), balances, program emails — and never takes card numbers,
-passwords or codes. It changes something in your apps or calendar only when you ask, after you see
-the whole list of changes, and it never deletes anything in your apps. Card terms come from an open catalog
-with the issuer's page and independent reviews behind every fact.
+It is a set of skills, not a service. There is no server and no sign-up: your ledger stays in a folder
+you own, and nothing is sent to us. Your AI only reads: it never pays, redeems, transfers, enrolls or
+changes anything on a site, and it never handles passwords or codes. Every value keeps the on-page text
+it came from; a history counts as complete only when the site showed its end; nothing is counted twice
+when you refresh. It writes into your ledger, calendar or finance app only after you see the whole list
+of changes, and never deletes anything in your apps. Card terms come from an open catalog with the
+issuer's own page and a check date behind every fact. A finance app is optional.
 
 ## Capabilities (each ≤ 120 characters)
 
-1. Shows which card credits you used, which are open this period, how much is left and the deadline.
-2. Lists credits, points, certificates and sign-up deadlines that expire soon, with the source of each date.
-3. Puts deadlines into your calendar as private events and marks them done when a credit is used.
-4. Shows points and miles balances with the date and source of every number and flags stale ones.
-5. Builds a Year in Review of your points game and compares it line by line with your own spreadsheet.
-6. Keeps a ledger you own in a file or folder; no server, nothing sent anywhere.
-7. Writes to your apps only after one preview of the whole batch, never deletes, never duplicates.
+1. Reads balances, activity, credits and deadlines from any site you open and sign in to yourself.
+2. Keeps every value with the on-page text it came from, and says plainly what it could not read.
+3. Shows which card credits you used, which are open this period, how much is left and the deadline.
+4. Lists credits, points, certificates and sign-up deadlines that expire soon, with the source of each date.
+5. Puts deadlines into your calendar as private events and marks them done when a credit is used.
+6. Builds a Year in Review of your points game and compares it line by line with your own spreadsheet.
+7. Keeps a ledger you own in a folder on your computer; no server, nothing sent anywhere.
+8. Writes only after one preview of the whole batch, never deletes, never duplicates.
 
 ## Three working examples (synthetic data in tests/fixtures and docs/examples)
 
-1. «Which card credits haven't I used this year?» with a ledger and a CSV export → per-card table,
-   questions for credits the bank never shows.
-2. «What expires in the next 60 days? Put it in my calendar.» → dated list, one private event per
-   date after a preview.
-3. «Did my points game pay off in 2025? Compare with my sheet.» → net result at fallback and at
-   value, each difference explained.
+1. «Collect my points» with a loyalty program site open → the rows found, one preview, the first report.
+2. «Which card credits haven't I used this year?» with the issuer's benefits page open → per-card table
+   with what is used, left and by when.
+3. «What expires in the next 60 days? Put it in my calendar.» → dated list, one private event per date
+   after a preview.
 
 ## Reviewer access (Claude directory)
 

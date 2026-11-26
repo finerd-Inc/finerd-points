@@ -26,6 +26,38 @@ def is_stale(card, today):
     return (today - checked).days > STALE_DAYS
 
 
+def fact_checked_on(card, benefit=None):
+    """A benefit's own check date, or its file's (spec v2: checked_on belongs to each fact)."""
+    return (benefit or {}).get("checked_on") or card["checked_on"]
+
+
+def fact_state(card, benefit, today):
+    """verified | unverified (older than 90 days, or no primary page confirms it yet)."""
+    if (benefit or {}).get("unverified"):
+        return "unverified"
+    checked = dt.date.fromisoformat(fact_checked_on(card, benefit))
+    return "unverified" if (today - checked).days > STALE_DAYS else "verified"
+
+
+def stale_facts(catalog, today):
+    """Every fact older than 90 days or unverified: [(file, item, checked_on, reason)]."""
+    out = []
+    for cid, c in sorted(catalog["cards"].items()):
+        for b in c.get("benefits", []):
+            if b.get("effective_to") and b["effective_to"] < today.isoformat():
+                continue
+            st = fact_state(c, b, today)
+            if st != "verified":
+                why = "no issuer or program page confirms it yet" if b.get("unverified") else "older than 90 days"
+                out.append((f"cards/{cid}.json", b["id"], fact_checked_on(c, b), why))
+        if (today - dt.date.fromisoformat(c["checked_on"])).days > STALE_DAYS:
+            out.append((f"cards/{cid}.json", "annual fee and card details", c["checked_on"], "older than 90 days"))
+    for pid, p in sorted(catalog["programs"].items()):
+        if (today - dt.date.fromisoformat(p["checked_on"])).days > STALE_DAYS:
+            out.append((f"programs/{pid}.json", "expiry rule and hosts", p["checked_on"], "older than 90 days"))
+    return out
+
+
 def _active(item, on):
     f, t = item.get("effective_from"), item.get("effective_to")
     if f and on < dt.date.fromisoformat(f):

@@ -19,6 +19,8 @@ EVIDENCE = {"statement_credit", "wallet", "folio", "program_account", "none"}
 SOURCE_KINDS = {"issuer", "program", "review", "community"}
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ID = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+HOST = re.compile(r"^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$")
+EXPIRY_RULES = {"activity", "fixed", "never", "other"}
 
 
 def is_date(v):
@@ -113,6 +115,14 @@ def check_card(path, d, programs, errs):
         if m and "verified" in m and not isinstance(m["verified"], bool):
             errs.append(f"{where}: match.verified must be true or false")
         check_sources_ref(where, b.get("sources"), sources, errs)
+        if b.get("amount") is not None and b.get("unverified") is not True and not any(
+                (sources.get(r) or {}).get("kind") in {"issuer", "program"} for r in b.get("sources") or []):
+            errs.append(f"{where}: an amount needs the issuer's or program's own page among its sources")
+        if b.get("checked_on") is not None and not is_date(b.get("checked_on")):
+            errs.append(f"{where}: checked_on must be YYYY-MM-DD")
+    for h in d.get("hosts") or []:
+        if not HOST.match(str(h)):
+            errs.append(f"{w}: host {h!r} must be a plain lowercase host name")
     for key in ("certificates", "thresholds", "upcoming_changes"):
         for i, item in enumerate(d.get(key) or []):
             check_sources_ref(f"{w}: {key}[{i}]", item.get("sources"), sources, errs)
@@ -132,9 +142,18 @@ def check_program(path, d, errs):
     if d.get("kind") not in {"hotel", "airline", "bank", "other"}:
         errs.append(f"{w}: kind must be hotel, airline, bank or other")
     sources = d.get("sources") or {}
+    if not is_date(d.get("checked_on")) or not d.get("checked_on"):
+        errs.append(f"{w}: checked_on must be YYYY-MM-DD")
+    for h in d.get("hosts") or []:
+        if not HOST.match(str(h)):
+            errs.append(f"{w}: host {h!r} must be a plain lowercase host name")
     exp = d.get("expiry")
     if exp is not None:
         check_sources_ref(f"{w}: expiry", exp.get("sources"), sources, errs)
+        if exp.get("rule") not in EXPIRY_RULES:
+            errs.append(f"{w}: expiry.rule must be one of {sorted(EXPIRY_RULES)}")
+        if not any((sources.get(r) or {}).get("kind") in {"issuer", "program"} for r in exp.get("sources") or []):
+            errs.append(f"{w}: an expiry rule needs the program's own page among its sources")
 
 
 def main():

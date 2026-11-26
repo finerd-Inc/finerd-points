@@ -658,22 +658,25 @@ class SkillFoldersStandalone(unittest.TestCase):
                     self.assertEqual(code, 0, f"{skill} check_facts: {out}{err}")
                 if not (scripts / "ledger.py").exists():
                     continue
-                led = work / f"{skill}.ledger.json"
-                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "init", "--ledger", str(led), "--name", "T",
-                                               "--session", "sess-1"], sd)
-                self.assertEqual(code, 0, f"{skill} init: {out}{err}")
+                folder = work / f"{skill} points"
+                led = folder / "ledger.json"
+                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "setup", "--folder", str(folder), "--name", "T"],
+                                              sd)
+                self.assertEqual(code, 0, f"{skill} setup: {out}{err}")
                 batch = work / f"{skill}.batch.json"
                 batch.write_text(json.dumps([{"op": "add_card", "id": "gold", "person": "me", "nickname": "Gold",
                                               "catalog_ref": "amex-gold", "finance_link": {"app": "CSV", "account_id": "Gold"}}]))
-                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "apply", "--ledger", str(led), "--batch",
-                                               str(batch), "--confirm", "x", "--session", "sess-1"], sd)
+                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "apply", "--folder", str(folder), "--batch",
+                                               str(batch), "--confirm", "0123456789abcdef"], sd)
                 self.assertEqual(code, 2, f"{skill}: apply without preview must be refused")
-                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "preview", "--ledger", str(led), "--batch",
+                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "preview", "--folder", str(folder), "--batch",
                                                str(batch), "--json"], sd)
                 h = json.loads(out)["hash"]
-                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "apply", "--ledger", str(led), "--batch",
-                                               str(batch), "--confirm", h, "--session", "sess-1"], sd)
+                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "apply", "--folder", str(folder), "--batch",
+                                               str(batch), "--confirm", h], sd)
                 self.assertEqual(code, 0, f"{skill} apply: {out}{err}")
+                code, out, err = self.run_cmd([str(scripts / "ledger.py"), "open", "--folder", str(folder)], sd)
+                self.assertEqual(json.loads(out)["check"]["chain"], "ok 2", f"{skill} open: {out}{err}")
                 if (scripts / "credits.py").exists():
                     txf = work / f"{skill}.txns.json"
                     code, out, err = self.run_cmd([str(scripts / "normalize.py"), "csv", "--file", str(gold),

@@ -24,6 +24,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import fpledger as fl  # noqa: E402
 
+AGGREGATOR_KINDS = ("awardwallet", "aggregator")
+
 KIND_TO_SOURCE = {"verified": "finance_app", "computed": "finance_app", "statement": "statement",
                   "program_page": "program_page", "program_api": "program_api", "email": "email",
                   "awardwallet": "awardwallet", "person": "person"}
@@ -33,12 +35,20 @@ def table(led, today):
     stale_days = led["_meta"]["settings"].get("stale_after_days", 30)
     obs = fl.active_observations(led)
     rows = []
+    direct = [o for o in obs if o["source"].get("kind") not in AGGREGATOR_KINDS]
     for acc in led["accounts"]:
-        cur = fl.current(led, f"account:{acc['id']}", "balance", obs)
-        exp = fl.current(led, f"account:{acc['id']}", "expires_on", obs)
+        cur = fl.current(led, f"account:{acc['id']}", "balance", direct)
+        exp = fl.current(led, f"account:{acc['id']}", "expires_on", direct)
         row = {"account": acc["id"], "nickname": acc["nickname"], "program": acc["program"], "unit": acc["unit"],
                "person": acc.get("person"), "balance": None, "as_of": None, "source": None, "state": "unknown",
                "expires_on": exp["value"] if exp else None, "conflicts": []}
+        # An aggregator's value (AwardWallet) is shown only with its own age and never outranks a direct read.
+        agg = fl.current(led, f"account:{acc['id']}", "balance",
+                         [o for o in obs if o["source"].get("kind") in AGGREGATOR_KINDS])
+        if agg:
+            note = next((o.get("note") for o in obs if o["id"] == agg["observation"]), None)
+            row["aggregator"] = {"balance": agg["value"], "read_on": agg["as_of"], "source": agg["source"],
+                                 "freshness": note}
         if cur:
             age = (today - dt.date.fromisoformat(cur["as_of"])).days
             row.update({"balance": cur["value"], "as_of": cur["as_of"], "source": cur["source"],

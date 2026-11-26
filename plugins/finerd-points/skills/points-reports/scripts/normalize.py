@@ -8,7 +8,7 @@ Contract (spec appendix D), file `finerd-points/transactions@1`:
   "accounts": [{"account_id", "name", "coverage": {"from", "to"}, "complete": bool,
                 "coverage_note": str|null}],
   "transactions": [{"id", "account_id", "date", "posted_date", "amount" (>0), "currency",
-                    "direction": "credit"|"debit", "kind": purchase|credit|refund|payment|transfer|fee|other,
+                    "direction": "credit"|"debit", "kind": purchase|credit|refund|payment|transfer|fee|noncash|other,
                     "description", "merchant", "category", "pending", "reversal_of"}]
 }
 `direction` is relative to the card or bank account: debit = money spent on the card,
@@ -37,6 +37,9 @@ from pathlib import Path
 CONTRACT = "finerd-points/transactions@1"
 FEE_RE = re.compile(r"(?i)\b(annual|membership)\s+fee\b")
 REVERSAL_RE = re.compile(r"(?i)\b(reversal|reversed|adj(ustment)?|clawback)\b")
+# Entries finerd points itself recorded in a finance app (a trip paid with points…) carry this marker.
+# Read back, they are never cash spending, a credit or a second redemption (spec v2, app skills).
+MARKER_RE = re.compile(r"\[finerd points (op|c)-?[0-9a-f-]+")
 
 
 def _date(s):
@@ -95,7 +98,10 @@ def from_finerd(paths, account_name, account_id, date_from, date_to, covered_fro
             continue
         ftype = (t.get("type") or "").upper()
         desc = t.get("description") or ""
-        if FEE_RE.search(desc) and direction == "debit":
+        marked = MARKER_RE.search(desc) or MARKER_RE.search(str(t.get("comment") or ""))
+        if marked:
+            kind = "noncash"
+        elif FEE_RE.search(desc) and direction == "debit":
             kind = "fee"
         elif direction == "debit":
             kind = "transfer" if ftype == "TRANSFER" else "purchase"
@@ -138,7 +144,9 @@ def from_csv(path, account_name, date_col, desc_col, amount_col, negative_is, da
                 d = dt.datetime.strptime(d, date_format).date().isoformat()
             desc = row.get(desc_col, "")
             up = desc.upper()
-            if direction == "debit":
+            if MARKER_RE.search(desc):
+                kind = "noncash"
+            elif direction == "debit":
                 kind = "fee" if FEE_RE.search(desc) else "purchase"
             elif "PAYMENT" in up or "AUTOPAY" in up or "THANK YOU" in up:
                 kind = "payment"

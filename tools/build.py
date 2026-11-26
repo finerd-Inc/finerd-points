@@ -10,6 +10,7 @@ its sandbox), so shared code, facts and references are copied, not linked.
 """
 import argparse
 import filecmp
+import re
 import hashlib
 import json
 import shutil
@@ -23,29 +24,38 @@ PLUGIN = ROOT / "plugins" / "finerd-points"
 SKILLS = PLUGIN / "skills"
 
 # What each skill gets. scripts = shared/lib modules; facts = whole catalog; refs = shared/references.
+STORE = ["fpstore.py", "fp_commit.sh", "fpcollect.py"]  # every skill with ledger.py writes through bin/commit
 PLAN = {
-    "points":         {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "balances.py"],
-                       "facts": True, "refs": True},
-    "card-credits":   {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py"],
-                       "facts": True, "refs": True},
+    "points":         {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "balances.py"] + STORE,
+                       "facts": True, "refs": True, "apps": True},
+    "card-credits":   {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py"] + STORE,
+                       "facts": True, "refs": True, "apps": True},
     "expirations":    {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py",
-                                   "expirations.py"],
-                       "facts": True, "refs": True},
-    "balances":       {"scripts": ["fpledger.py", "ledger.py", "balances.py"], "facts": False, "refs": True},
+                                   "expirations.py"] + STORE,
+                       "facts": True, "refs": True, "apps": True},
+    "balances":       {"scripts": ["fpledger.py", "ledger.py", "balances.py"] + STORE, "facts": False, "refs": True,
+                       "apps": True},
     "points-reports": {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py", "yir.py",
-                                   "balances.py", "spend.py", "render_report.py"],
+                                   "balances.py", "spend.py", "render_report.py", "expirations.py",
+                                   "report.py"] + STORE,
                        "facts": True, "refs": True, "extra_refs": ["year-in-review-formula.md"],
-                       "assets": True},
+                       "assets": True, "apps": True},
+    "collect":        {"scripts": ["fpledger.py", "ledger.py", "normalize.py", "fpfacts.py", "credits.py", "yir.py",
+                                   "balances.py", "expirations.py", "render_report.py", "report.py"] + STORE,
+                       "facts": True, "refs": True, "assets": True, "apps": True, "short_paths": True},
     "facts-check":    {"scripts": ["fpfacts.py"], "tools": ["check_facts.py"], "facts": True, "refs": False},
 }
-# Connector guides per build. The Claude directory build names only Google, finerd (the publisher's
-# own connector), CSV and connectors listed in Claude's directory (verify before each submission).
-CONNECTORS = {
-    "github": None,  # all
-    "claude-directory": ["README.md", "finerd.md", "google-calendar.md", "google-sheets.md", "csv.md"],
-    "chatgpt": ["README.md", "finerd.md", "google-calendar.md", "google-sheets.md", "csv.md", "monarch.md",
-                "copilot.md"],
-}
+# Builds. A directory build carries only the app skills whose APP.md lists that directory (Claude: the
+# publisher's own connector or one in Claude's directory, checked per app before each submission), never
+# short paths, and none of the text between github-build-only markers.
+TARGETS = {"github": None, "claude-directory": "claude", "chatgpt": "chatgpt"}
+LEGAL_TEXTS = {"TERMS.md", "PRIVACY.md"}
+ALLOWED_SUFFIXES = {".md", ".py", ".json", ".sh", ".css", ".png"}
+PNG_ALLOWED = {"assets/icon.png"}
+# The one image ships only as reviewed: any change to the icon must change this hash in a reviewed pull request
+# (a valid PNG can still carry other data inside its own chunks).
+ICON_SHA256 = "baf436bdf18794b52c34411a5aa257e2b52a215001470f63ce6ce039339b10b1"
+GITHUB_ONLY = re.compile(r"\n?<!-- github-build-only:start -->.*?<!-- github-build-only:end -->\n?", re.S)
 SKIP = {"__pycache__", ".DS_Store"}
 
 
@@ -69,6 +79,14 @@ def expected_files(skill):
                 out[f"references/{p.relative_to(SHARED / 'references')}"] = p
     for r in spec.get("extra_refs", []):
         out[f"references/{r}"] = SHARED / "references" / r
+    if spec.get("apps"):
+        for p in sorted((SHARED / "apps").rglob("*")):
+            if p.is_file() and not (set(p.parts) & SKIP):
+                out[f"references/apps/{p.relative_to(SHARED / 'apps')}"] = p
+    if spec.get("short_paths"):
+        for p in sorted((SHARED / "short-paths").rglob("*")):
+            if p.is_file() and not (set(p.parts) & SKIP):
+                out[f"short-paths/{p.relative_to(SHARED / 'short-paths')}"] = p
     if spec.get("assets"):
         for p in sorted((SHARED / "assets").rglob("*")):
             if p.is_file() and not (set(p.parts) & SKIP):
@@ -77,7 +95,7 @@ def expected_files(skill):
 
 
 def managed_dirs():
-    return ("scripts", "facts", "references", "assets")
+    return ("scripts", "facts", "references", "assets", "short-paths")
 
 
 ROOT_COPIES = ["LICENSE", "NOTICE", "TERMS.md", "PRIVACY.md", "SECURITY.md"]  # the plugin folder is submitted alone, so it carries its own copies
@@ -99,8 +117,48 @@ def sync():
         print(f"{skill}: {len(want)} files")
 
 
+# What each shared source folder may hold. Anything else (a script disguised as an image, a loader) never
+# reaches a skill folder.
+SOURCE_FORMATS = {"lib": {".py", ".sh"}, "references": {".md"}, "facts": {".json", ".md"}, "apps": {".md"},
+                  "short-paths": {".md"}, "assets": {".css"}}
+PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
+
+
+def png_ok(data):
+    """A plain PNG: valid chunks up to IEND and nothing after it (no appended archive or script)."""
+    import struct
+    import zlib
+    if not data.startswith(PNG_MAGIC):
+        return False
+    i = len(PNG_MAGIC)
+    while i + 12 <= len(data):
+        n, kind = struct.unpack(">I4s", data[i:i + 8])
+        chunk = data[i + 8:i + 8 + n]
+        crc = data[i + 8 + n:i + 12 + n]
+        if len(chunk) != n or len(crc) != 4 or struct.unpack(">I", crc)[0] != zlib.crc32(kind + chunk) & 0xFFFFFFFF:
+            return False
+        if kind not in (b"IHDR", b"PLTE", b"IDAT", b"IEND", b"tRNS", b"gAMA", b"cHRM", b"sRGB", b"iCCP", b"pHYs",
+                        b"tIME", b"bKGD", b"sBIT"):
+            return False  # no text, metadata or private chunks
+        i += 12 + n
+        if kind == b"IEND":
+            return i == len(data)
+    return False
+
+
 def check():
     problems = []
+    for sub, allowed in SOURCE_FORMATS.items():
+        for p in (SHARED / sub).rglob("*"):
+            if p.is_symlink():
+                problems.append(f"shared/{sub}/{p.relative_to(SHARED / sub)} is a symbolic link")
+            elif p.is_file() and not (set(p.parts) & SKIP) and p.suffix not in allowed:
+                problems.append(f"shared/{sub}/{p.relative_to(SHARED / sub)}: only {', '.join(sorted(allowed))} "
+                                f"files belong in shared/{sub}")
+    icon = PLUGIN / "assets" / "icon.png"
+    if icon.exists() and (not png_ok(icon.read_bytes()) or hashlib.sha256(icon.read_bytes()).hexdigest() != ICON_SHA256):
+        problems.append("plugins/finerd-points/assets/icon.png is not the reviewed icon (its hash is pinned in "
+                        "tools/build.py; change both in one reviewed pull request)")
     for f in ROOT_COPIES:
         if not (PLUGIN / f).exists() or not filecmp.cmp(ROOT / f, PLUGIN / f, shallow=False):
             problems.append(f"plugins/finerd-points/{f} differs from {f}")
@@ -118,6 +176,17 @@ def check():
             problems.append(f"{skill}: unexpected {rel}")
         if not (d / "SKILL.md").exists():
             problems.append(f"{skill}: no SKILL.md")
+    known = {PLUGIN / f for f in ROOT_COPIES} | {PLUGIN / ".claude-plugin" / "plugin.json", PLUGIN / "README.md",
+                                                  PLUGIN / "assets" / "icon.png"}
+    for skill in PLAN:
+        known.add(SKILLS / skill / "SKILL.md")
+        known |= {SKILLS / skill / rel for rel in expected_files(skill)}
+    for p in PLUGIN.rglob("*"):
+        if p.is_file() and not (set(p.parts) & SKIP) and p not in known:
+            problems.append(f"{p.relative_to(ROOT)} is not part of the plugin (only generated copies, SKILL.md files and "
+                            f"the manifest, README, legal texts and icon may be there)")
+        if p.is_symlink():
+            problems.append(f"{p.relative_to(ROOT)} is a symbolic link")
     for p in PLUGIN.rglob("*"):
         if p.is_file() and p.stat().st_size >= 256 * 1024:
             problems.append(f"{p.relative_to(ROOT)} is {p.stat().st_size // 1024} KiB (directory review holds ≥256 KiB)")
@@ -130,45 +199,77 @@ def check():
     return not problems
 
 
+def _app_dirs():
+    sys.path.insert(0, str(ROOT / "tools"))
+    import check_apps
+    apps, problems = check_apps.check()
+    if problems:
+        sys.exit("App skills do not pass tools/check_apps.py: " + "; ".join(problems))
+    return apps
+
+
 def package(target):
     if not check():
         sys.exit(1)
+    directory = TARGETS[target]
+    apps = _app_dirs()
+    excluded = set() if directory is None else {a for a, h in apps.items()
+                                                 if directory not in h["directory"] or h["status"] != "active"}
     dist = ROOT / "dist"
     dist.mkdir(exist_ok=True)
     zpath = dist / f"finerd-points-{target}.zip"
-    allowed = CONNECTORS[target]
     manifest = {}
     with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
         for p in sorted(PLUGIN.rglob("*")):
             if not p.is_file() or set(p.parts) & SKIP:
                 continue
             rel = p.relative_to(PLUGIN)
-            if allowed is not None and "connectors" in rel.parts and p.name not in allowed:
-                continue
+            if directory is not None:
+                if "short-paths" in rel.parts:
+                    continue
+                if "apps" in rel.parts and rel.parts[rel.parts.index("apps") + 1] in excluded:
+                    continue
+            if p.suffix not in ALLOWED_SUFFIXES and p.name not in ("LICENSE", "NOTICE"):
+                sys.exit(f"The {target} build may not carry {rel} (only {', '.join(sorted(ALLOWED_SUFFIXES))})")
+            if p.suffix == ".png" and (str(rel) not in PNG_ALLOWED or not png_ok(p.read_bytes())
+                                       or hashlib.sha256(p.read_bytes()).hexdigest() != ICON_SHA256):
+                sys.exit(f"The {target} build may not carry {rel}: the only image is the PNG icon")
             data = p.read_bytes()
+            if directory is not None and p.suffix == ".md":
+                data = GITHUB_ONLY.sub("\n", data.decode("utf-8")).encode("utf-8")
             manifest[str(rel)] = hashlib.sha256(data).hexdigest()
             z.writestr(f"finerd-points/{rel}", data)
         z.writestr("finerd-points/MANIFEST.sha256.json", json.dumps(manifest, indent=1, sort_keys=True) + "\n")
-    if target == "claude-directory":
-        import re
+    if directory is not None:
+        # Release check (spec v2): no short path, no loader or instruction that calls one, and no excluded
+        # app skill or text that names it.
+        names = [apps[a]["name"] for a in excluded] + sorted(excluded)
+        rx = re.compile(r"short-paths|short path|github-build-only|references/apps/(" +
+                        "|".join(re.escape(a) for a in sorted(excluded) or ["$^"]) + r")\b" +
+                        ("|\\b(" + "|".join(re.escape(n) for n in names) + r")\b" if names else ""), re.I)
         bad = []
         with zipfile.ZipFile(zpath) as z:
             for name in z.namelist():
-                if name.endswith((".md", ".py", ".json")):
-                    text = z.read(name).decode("utf-8", "ignore")
-                    if re.search(r"\b(Monarch|Copilot|YNAB)\b", text):
-                        bad.append(name)
+                if "short-paths" in name:
+                    bad.append(name)
+                elif not name.endswith(".png"):
+                    if name.rsplit("/", 1)[-1] in LEGAL_TEXTS:
+                        continue  # the terms disclose that short paths exist; they load nothing
+                    m = rx.search(z.read(name).decode("utf-8", "ignore"))
+                    if m:
+                        bad.append(f"{name} ({m.group(0)})")
         if bad:
             zpath.unlink()
-            sys.exit("Claude directory build names connectors not in Claude's directory (rule 3.F): " + ", ".join(bad))
-    print(f"wrote {zpath.relative_to(ROOT)} ({len(manifest)} files)")
+            sys.exit(f"The {target} build is not clean (short paths or app skills it may not carry): " + ", ".join(bad))
+    print(f"wrote {zpath.relative_to(ROOT)} ({len(manifest)} files; app skills left out: "
+          f"{', '.join(sorted(excluded)) or 'none'})")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", nargs="?", default="sync", choices=["sync", "package"])
     ap.add_argument("--check", action="store_true")
-    ap.add_argument("--target", choices=list(CONNECTORS), default="github")
+    ap.add_argument("--target", choices=list(TARGETS), default="github")
     a = ap.parse_args()
     if a.check:
         sys.exit(0 if check() else 1)

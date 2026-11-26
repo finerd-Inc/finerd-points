@@ -1,7 +1,7 @@
 {
   "name": "finerd-points",
-  "version": "0.1.3",
-  "description": "Track credit-card credits, points and miles balances, expiring benefits and your yearly points result in your AI assistant. Skills only: no server; your ledger stays in a file or folder you own.",
+  "version": "0.2.0",
+  "description": "Collect all your points, miles, card credits and deadlines from whatever you open — any bank or loyalty site, AwardWallet, a sheet, a statement — into a ledger on your own computer, and see the report. Skills only: no server, no sign-up.",
   "author": {
     "name": "finerd",
     "url": "https://github.com/finerd-Inc"

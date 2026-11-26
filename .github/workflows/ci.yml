@@ -16,4 +16,6 @@ jobs:
           python-version: "3.9"
       - run: python3 tools/check_facts.py
       - run: python3 tools/build.py --check
+      - run: python3 tools/check_apps.py
+      - run: for t in github claude-directory chatgpt; do python3 tools/build.py package --target $t; done
       - run: python3 -m unittest discover -s tests -v

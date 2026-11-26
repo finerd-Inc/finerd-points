@@ -1,0 +1,1005 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "amex-business-platinum",
+  "name": "The Business Platinum Card from American Express",
+  "issuer": "American Express",
+  "country": "US",
+  "segment": "business",
+  "currency": "USD",
+  "rewards_program": "amex-membership-rewards",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 895,
+      "effective_from": "2025-09-18",
+      "effective_to": null,
+      "note": "Major refresh on 2025-09-18; the increased fee applied to existing-account renewals from 2025-12-02. New applicants from the 2025-09-18 refresh; existing accounts at renewals from 2025-12-02. The earlier fee is not in the catalog.",
+      "sources": [
+        "BP1",
+        "BP4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "lodging-credit",
+      "name": "Lodging credit",
+      "kind": "statement_credit",
+      "amount": 300,
+      "period": "half_year",
+      "annual_max": 600,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "No separate enrollment; link an Airbnb account for Airbnb bookings.",
+      "qualifying": "Prepaid Fine Hotels + Resorts, The Hotel Collection and Airbnb Luxe bookings made through Amex Travel; The Hotel Collection and Luxe need 2 nights.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AIRBNB",
+          "FINE HOTELS",
+          "HOTEL COLLECTION"
+        ],
+        "posting_lag_days": 90
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Processed by period end (11:59 p.m. Central). Amex terms effective 2026-10-22 broadened the older $600 Hotel Credit to include Airbnb Luxe; the product page still uses the old name in places. One-night Fine Hotels + Resorts stays stay eligible until the two-night minimum starts 2027-01-01.",
+      "sources": [
+        "BP1",
+        "BP5"
+      ]
+    },
+    {
+      "id": "airbnb-experiences-credit",
+      "name": "Airbnb Experiences credit",
+      "kind": "statement_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": 250,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Unlock each year with a confirmed qualifying prepaid Airbnb Luxe booking.",
+      "qualifying": "Experiences sold directly by Airbnb once unlocked; purchases redirected to third parties are excluded.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AIRBNB"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": "2026-10-22",
+      "effective_to": null,
+      "note": "Cancelling all qualifying Luxe bookings can reverse the credits.",
+      "sources": [
+        "BP5"
+      ],
+      "requires": {
+        "kind": "activation",
+        "note": "unlocking as described in the card terms"
+      }
+    },
+    {
+      "id": "hilton-credit",
+      "name": "Hilton credit",
+      "kind": "statement_credit",
+      "amount": 50,
+      "period": "quarter",
+      "annual_max": 200,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll with Amex and register with Hilton for Business.",
+      "qualifying": "Eligible purchases made directly at Hilton properties; gift cards are excluded.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "HILTON"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "airline-incidental-credit",
+      "name": "Airline incidental credit",
+      "kind": "statement_credit",
+      "amount": 200,
+      "period": "calendar_year",
+      "annual_max": 200,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Select one eligible airline; it can be changed in January.",
+      "qualifying": "Eligible incidental fees charged by the selected airline; ordinary airfare does not count.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AIRLINE",
+          "AIRLINES"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Whether a charge qualifies depends on how the airline codes the merchant.",
+      "sources": [
+        "BP1",
+        "BP2"
+      ]
+    },
+    {
+      "id": "clear-plus-until-2026-06",
+      "name": "CLEAR+ credit",
+      "kind": "statement_credit",
+      "amount": 209,
+      "period": "calendar_year",
+      "annual_max": 209,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Join CLEAR+ and pay with the card.",
+      "qualifying": "CLEAR+ membership; the issuer excludes taxes and fees.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "CLEAR"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2026-06-30",
+      "note": "Before 2026-07-01 the credit was $209 (older sources also show $189 and $199).",
+      "sources": [
+        "BP1",
+        "BP12"
+      ]
+    },
+    {
+      "id": "clear-plus",
+      "name": "CLEAR+ credit",
+      "kind": "statement_credit",
+      "amount": 219,
+      "period": "calendar_year",
+      "annual_max": 219,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Join CLEAR+ and pay with the card.",
+      "qualifying": "CLEAR+ membership; the issuer excludes taxes and fees.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "CLEAR"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": "2026-07-01",
+      "effective_to": null,
+      "note": "Raised to $219 on 2026-07-01; older $209 figures are superseded.",
+      "sources": [
+        "BP1",
+        "BP12"
+      ]
+    },
+    {
+      "id": "global-entry-tsa",
+      "name": "Global Entry / TSA PreCheck credit",
+      "kind": "statement_credit",
+      "amount": 120,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "No separate Amex activation.",
+      "qualifying": "Application fee paid directly through an eligible provider.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "GLOBAL ENTRY",
+          "TSA"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Available once every 4 years, for either program: up to $120 for Global Entry or up to $85 for TSA PreCheck. Current issuer terms say 4 years for both; older text gave TSA 4.5 years.",
+      "sources": [
+        "BP1",
+        "BP12"
+      ]
+    },
+    {
+      "id": "dell-credit",
+      "name": "Dell credit",
+      "kind": "statement_credit",
+      "amount": 150,
+      "period": "calendar_year",
+      "annual_max": 150,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible U.S. purchases made directly with Dell.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "DELL"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Resets January 1.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "dell-spend-credit",
+      "name": "Dell spend-based credit",
+      "kind": "statement_credit",
+      "amount": 1000,
+      "period": "calendar_year",
+      "annual_max": 1000,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible U.S. purchases made directly with Dell, counted cumulatively.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "DELL"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Unlocked by $5,000 of qualifying Dell purchases in the calendar year; resets January 1.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ],
+      "requires": {
+        "kind": "spend_threshold",
+        "note": "$5,000 of qualifying Dell purchases in the calendar year"
+      }
+    },
+    {
+      "id": "adobe-credit",
+      "name": "Adobe credit",
+      "kind": "statement_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": 250,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible U.S. purchases made directly with Adobe.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "ADOBE"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Unlocked by $600 of qualifying Adobe purchases in the calendar year.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ],
+      "requires": {
+        "kind": "spend_threshold",
+        "note": "$600 of qualifying Adobe purchases in the calendar year"
+      }
+    },
+    {
+      "id": "indeed-credit",
+      "name": "Indeed credit",
+      "kind": "statement_credit",
+      "amount": 90,
+      "period": "quarter",
+      "annual_max": 360,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible Indeed purchases.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "INDEED"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "wireless-credit",
+      "name": "Wireless credit",
+      "kind": "statement_credit",
+      "amount": 10,
+      "period": "month",
+      "annual_max": 120,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "U.S. wireless telephone service bought directly from a provider.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "WIRELESS"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "From 2027-02-17 the credit is limited to select merchants.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "chatgpt-business",
+      "name": "ChatGPT Business credit",
+      "kind": "statement_credit",
+      "amount": 300,
+      "period": "calendar_year",
+      "annual_max": 300,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll the benefit in the Amex account.",
+      "qualifying": "Eligible U.S. ChatGPT Business subscription purchases.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "CHATGPT"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Amex documented this benefit on 2026-06-05; its first effective date was not found.",
+      "sources": [
+        "BP1",
+        "BG7"
+      ]
+    },
+    {
+      "id": "zo-membership",
+      "name": "ZO membership",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate the ZO membership.",
+      "qualifying": "Participating U.S. ZO and Studio locations (reservations where required): 4 guest passes a week and 4 Studio day passes a month.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": "2026-10-22",
+      "effective_to": null,
+      "note": "The exact weekly reset day and rollover rules were not found.",
+      "sources": [
+        "BP1",
+        "BP6"
+      ]
+    },
+    {
+      "id": "zo-spending-credit",
+      "name": "ZO spending credit",
+      "kind": "statement_credit",
+      "amount": 500,
+      "period": "calendar_year",
+      "annual_max": 500,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate the ZO membership.",
+      "qualifying": "Eligible event-space bookings and/or Dining Club membership; ordinary restaurant dining is not the stated qualifying category.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "ZO"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": "2026-10-22",
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "BP1",
+        "BP6"
+      ]
+    },
+    {
+      "id": "amex-travel-flight-credit",
+      "name": "Amex Travel flight credit",
+      "kind": "statement_credit",
+      "amount": 1200,
+      "period": "calendar_year",
+      "annual_max": 1200,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Unlocked by spend; no separate enrollment is stated.",
+      "qualifying": "Eligible flights booked online through Amex Travel.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "AMEX TRAVEL"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Unlocked by $250,000 of qualifying spend in a calendar year and available the next calendar year.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP4"
+      ],
+      "requires": {
+        "kind": "spend_threshold",
+        "note": "$250,000 of qualifying spend in the previous calendar year"
+      }
+    },
+    {
+      "id": "one-ap-credit",
+      "name": "One AP credit",
+      "kind": "statement_credit",
+      "amount": 2400,
+      "period": "calendar_year",
+      "annual_max": 2400,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll in and use One AP; active bank-funded check or ACH payments are required.",
+      "qualifying": "One AP monthly platform fees, transaction fees and applicable taxes charged to the card.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "ONE AP",
+          "ONEAP"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Unlocked by $250,000 of qualifying spend and available the next calendar year as an annual pool. Billing in arrears can move usage into another year.",
+      "sources": [
+        "BP1",
+        "BP7"
+      ],
+      "requires": {
+        "kind": "spend_threshold",
+        "note": "$250,000 of qualifying spend in the previous calendar year"
+      }
+    },
+    {
+      "id": "airline-points-rebate",
+      "name": "Pay with Points airline rebate",
+      "kind": "other",
+      "amount": null,
+      "period": "calendar_year",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Select a qualifying airline.",
+      "qualifying": "Eligible Amex Travel flights on the selected airline, all eligible cabins.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Returns 35% of points used, up to 1,000,000 points per calendar year, as Membership Rewards points rather than cash. Older descriptions allowing it for premium cabins on any airline are outdated.",
+      "sources": [
+        "BP8",
+        "BP2"
+      ]
+    },
+    {
+      "id": "fine-hotels-resorts",
+      "name": "Fine Hotels + Resorts benefits",
+      "kind": "folio_credit",
+      "amount": 100,
+      "period": "per_stay",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Book through Amex Travel.",
+      "qualifying": "Participating Fine Hotels + Resorts properties: normally a $100 experience credit, breakfast for two and guaranteed 4 p.m. checkout, plus extras that depend on availability.",
+      "evidence": "folio",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "BP1",
+        "BP3"
+      ]
+    },
+    {
+      "id": "hotel-collection",
+      "name": "The Hotel Collection property credit",
+      "kind": "folio_credit",
+      "amount": 100,
+      "period": "per_stay",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Book through Amex Travel; minimum two consecutive nights.",
+      "qualifying": "Participating properties; property-designated incidentals.",
+      "evidence": "folio",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": null,
+      "sources": [
+        "BP1",
+        "BP3"
+      ]
+    },
+    {
+      "id": "cruise-privileges",
+      "name": "Cruise Privileges",
+      "kind": "folio_credit",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Book through Amex Travel.",
+      "qualifying": "Participating cruise lines, generally sailings of 5+ nights, up to 3 eligible staterooms: an onboard credit plus an eligible amenity.",
+      "evidence": "folio",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "The onboard credit ranges from $100 to $300 per qualifying sailing.",
+      "sources": [
+        "BP9"
+      ]
+    },
+    {
+      "id": "lounge-access",
+      "name": "Lounge access",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll in Priority Pass; other networks need an eligible card or ticket.",
+      "qualifying": "Global Lounge Collection (Centurion, eligible Delta, Priority Pass and other participating lounges); access and guest rules vary.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Delta Sky Club is normally 10 visits per Delta visit year (Feb. 1 to Jan. 31). Centurion guest access and unlimited Delta Sky Club visits are unlocked by the $75,000 spend threshold.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "hilton-gold-status",
+      "name": "Hilton Gold status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll separately in the Hilton program.",
+      "qualifying": "Participating loyalty program benefits.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Ongoing while the card is eligible.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "marriott-gold-status",
+      "name": "Marriott Gold status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll separately in the Marriott program.",
+      "qualifying": "Participating loyalty program benefits.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Ongoing while the card is eligible.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "leaders-club-sterling-status",
+      "name": "Leaders Club Sterling status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll separately in the Leaders Club program.",
+      "qualifying": "Participating loyalty program benefits.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Ongoing while the card is eligible.",
+      "sources": [
+        "BP1",
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "avis-preferred-plus-status",
+      "name": "Avis Preferred Plus status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll through Amex.",
+      "qualifying": "Eligible rentals.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Ongoing while the card is eligible.",
+      "sources": [
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "hertz-presidents-circle-status",
+      "name": "Hertz President's Circle status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll through Amex.",
+      "qualifying": "Eligible rentals.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Ongoing while the card is eligible.",
+      "sources": [
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "national-executive-status",
+      "name": "National Executive status",
+      "kind": "status",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll through Amex.",
+      "qualifying": "Eligible rentals.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Ongoing while the card is eligible.",
+      "sources": [
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "vendor-pay-bill",
+      "name": "Vendor Pay by BILL discount",
+      "kind": "other",
+      "amount": null,
+      "period": "month",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll.",
+      "qualifying": "Eligible Vendor Pay Basic plan; other fees may apply.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "First user free; second user free for 6 months, then $15 a month. The subscription fee is waived or discounted, not credited.",
+      "sources": [
+        "BP1"
+      ]
+    },
+    {
+      "id": "airfare-dining-access",
+      "name": "Airline-fare and dining access",
+      "kind": "other",
+      "amount": null,
+      "period": "per_booking",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "unknown",
+      "enrollment_how": "Program-specific.",
+      "qualifying": "International Airline Program and Platinum airfares, plus eligible dining access.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Value varies and a fixed value was not found. No separate recurring statement credit.",
+      "sources": [
+        "BP1",
+        "BP3"
+      ]
+    },
+    {
+      "id": "venue-concessions",
+      "name": "Amex Venue Collection concessions",
+      "kind": "percentage_credit",
+      "amount": 250,
+      "period": "calendar_year",
+      "annual_max": 250,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Enroll one eligible Amex card per Card Member.",
+      "qualifying": "10% back on food and drink at participating stadium and arena concessions; tickets, parking and merchandise excluded.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "VENUE",
+          "CONCESSION",
+          "CONCESSIONS"
+        ]
+      },
+      "shared_group": "amex-venue-concessions",
+      "effective_from": null,
+      "effective_to": "2026-12-31",
+      "note": "One allowance per Card Member across all enrolled Amex cards.",
+      "sources": [
+        "AC"
+      ]
+    }
+  ],
+  "certificates": [],
+  "thresholds": [
+    {
+      "id": "250k-next-year-credits",
+      "spend": 250000,
+      "period": "calendar_year",
+      "unlocks": "Next calendar year's $1,200 Amex Travel flight credit and $2,400 One AP credit.",
+      "sources": [
+        "BP1",
+        "BP4",
+        "BP7"
+      ]
+    },
+    {
+      "id": "75k-lounge-guest-access",
+      "spend": 75000,
+      "period": "calendar_year",
+      "unlocks": "Complimentary Centurion lounge guest access and unlimited eligible Delta Sky Club visits, each under its own rules. A single universal expiration for both was not found.",
+      "sources": [
+        "BP2",
+        "BP3"
+      ]
+    },
+    {
+      "id": "dell-5k",
+      "spend": 5000,
+      "period": "calendar_year",
+      "unlocks": "Additional $1,000 Dell credit after $5,000 of qualifying Dell purchases.",
+      "sources": [
+        "BP1"
+      ]
+    },
+    {
+      "id": "adobe-600",
+      "spend": 600,
+      "period": "calendar_year",
+      "unlocks": "$250 Adobe credit after $600 of qualifying Adobe purchases.",
+      "sources": [
+        "BP1"
+      ]
+    },
+    {
+      "id": "2x-earning-cap",
+      "spend": 2000000,
+      "period": "calendar_year",
+      "unlocks": "2x on eligible business categories and on purchases of $5,000 or more, up to this combined amount.",
+      "sources": [
+        "BP1",
+        "BP2"
+      ]
+    }
+  ],
+  "disagreements": [
+    {
+      "topic": "Name and scope of the hotel credit",
+      "values": [
+        {
+          "value": "The main product page still says '$600 Hotel Credit' in places.",
+          "sources": [
+            "BP1"
+          ]
+        },
+        {
+          "value": "Amex Travel terms effective 2026-10-22 describe the broader Lodging Credit, including qualifying Airbnb Luxe.",
+          "sources": [
+            "BP5"
+          ]
+        }
+      ]
+    }
+  ],
+  "upcoming_changes": [
+    {
+      "effective_from": "2027-01-01",
+      "summary": "The Fine Hotels + Resorts bookings that count toward the Lodging credit get a two-night minimum; one-night stays stay eligible until then. The Hotel Collection and Airbnb Luxe already need two nights.",
+      "sources": [
+        "BP5"
+      ]
+    },
+    {
+      "effective_from": "2027-02-17",
+      "summary": "The wireless credit becomes limited to select merchants.",
+      "sources": [
+        "BP1"
+      ]
+    }
+  ],
+  "sources": {
+    "AC": {
+      "title": "Amex Venue Collection concessions offer terms",
+      "url": "https://www.americanexpress.com/en-us/benefits/membership/experiences/venues/concessions-enrollment/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2026-06-05",
+      "checked_on": "2026-11-02"
+    },
+    "BG7": {
+      "title": "ChatGPT Business benefit for Business Platinum and Business Gold",
+      "url": "https://www.americanexpress.com/en-us/business/trends-and-insights/articles/how-to-get-more-done-with-chatgpt-business-a-new-benefit-for-american-express-business-platinum-card-and-business-gold-card-members/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": "2026-06-05",
+      "checked_on": "2026-11-02"
+    },
+    "BP1": {
+      "title": "Business Platinum Card product and benefit terms",
+      "url": "https://www.americanexpress.com/us/credit-cards/business/business-credit-cards/american-express-business-platinum-credit-card-amex/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP2": {
+      "title": "Business Platinum Card review",
+      "url": "https://onemileatatime.com/reviews/credit-cards/american-express/amex-business-platinum-card/",
+      "publisher": "One Mile at a Time",
+      "kind": "review",
+      "published": "2026-09-20",
+      "checked_on": "2026-11-02"
+    },
+    "BP3": {
+      "title": "Business Platinum Card review",
+      "url": "https://thepointsguy.com/reviews/amex-business-platinum-card-review/",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": "2026-04-03",
+      "checked_on": "2026-11-02"
+    },
+    "BP4": {
+      "title": "Business Platinum refresh fact sheet (September 2025)",
+      "url": "https://www.americanexpress.com/content/dam/amex/en-us/company/press-kits/platinum-refresh/U-S-Business-Platinum-Card-Fact-Sheet.pdf",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP5": {
+      "title": "Amex Travel terms and conditions (effective 2026-10-22)",
+      "url": "https://www.americanexpress.com/en-us/travel/programs-and-benefits/terms-and-conditions/",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP6": {
+      "title": "Business Platinum ZO coworking benefit launch",
+      "url": "https://thepointsguy.com/news/amex-business-platinum-zo-coworking-benefit-launch",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP7": {
+      "title": "Business Platinum One AP statement credit terms",
+      "url": "https://global.americanexpress.com/card-benefits/detail/oneap-statement-credit/business-platinum",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP8": {
+      "title": "Business Platinum airline bonus (Pay with Points rebate) terms",
+      "url": "https://global.americanexpress.com/card-benefits/detail/airline-bonus/business-platinum",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP9": {
+      "title": "Business Platinum Cruise Privileges terms",
+      "url": "https://global.americanexpress.com/card-benefits/detail/cruise-privileges-program/business-platinum",
+      "publisher": "American Express",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP10": {
+      "title": "Existing Amex Business Platinum renewal fee increases after December 2025",
+      "url": "https://www.doctorofcredit.com/existing-american-express-business-platinum-consumer-platinum-annual-fee-renewals-to-increase-after-december-2025-january-2026/",
+      "publisher": "Doctor of Credit",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "BP12": {
+      "title": "CLEAR rates for American Express Card Members",
+      "url": "https://www.clearme.com/support/what-are-the-special-rates-for-american-express-cardholders-1",
+      "publisher": "CLEAR",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  },
+  "terms_from": "2025-09-18"
+}

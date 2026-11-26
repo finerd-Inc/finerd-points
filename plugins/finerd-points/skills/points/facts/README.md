@@ -10,8 +10,15 @@ copies match).
   Time, The Points Guy, NerdWallet, AwardWallet, Frequent Miler…) corroborate.
 - What all sources agree on is recorded as the fact. Where they differ, both
   values go into `disagreements` with their sources; the skill shows both.
-- Every card file carries `checked_on`. A fact not re-checked for more than 90
-  days is shown as **unverified**.
+- Every card file carries `checked_on`; a benefit may carry its own. A fact not
+  re-checked for more than 90 days is shown as **unverified**, with its check date.
+  `checked_on` advances only after the fact was re-read on the issuer's or program's
+  own page, and checking one benefit does not refresh the others.
+- An amount, period or expiry rule needs the issuer's or program's own page among its
+  sources; CI refuses it otherwise. A fact no primary page confirms yet is marked
+  `unverified: true` and shown that way.
+- The finerd team owns the stale list: a weekly check opens one issue listing facts
+  older than 90 days, cleared within 30 days (re-checked or retired).
 - Terms change. Old versions are never edited in place: a changed benefit gets a
   new entry with `effective_from`, and the old one gets `effective_to`. Every
   calculation stores the `rule_version` it used.
@@ -70,6 +77,10 @@ copies match).
                                           //     "note": "$5,000 of Dell purchases in the year"}:
                                           //  a credit that opens only after a condition is never shown as
                                           //  money waiting to be used
+      "checked_on": "2026-11-16",         // optional: this benefit's own check date (default: the file's);
+                                          // it advances only after a re-read of the issuer's own page
+      "unverified": false,                // true when no issuer or program page confirms it yet: shown
+                                          // as unverified, and allowed without a primary source
       "shared_group": null,               // e.g. "amex-venue-concessions": one allowance per person
       "effective_from": "2024-07-25",
       "effective_to": null,
@@ -113,6 +124,9 @@ copies match).
   "unit": "points",                       // points | miles | cash
   "kind": "hotel",                        // hotel | airline | bank | other
   "expiry": {"rule": "activity", "months": 24, "note": "…", "sources": ["P1"]},
+                                          // rule: activity | fixed | never | other; null = not found
+  "hosts": ["www.hyatt.com"],             // where a member signs in and sees activity; `collect` reads
+                                          // only these hosts (or ones the person names)
   "checked_on": "2026-11-02",
   "sources": {}
 }

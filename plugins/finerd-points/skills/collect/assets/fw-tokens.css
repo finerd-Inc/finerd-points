@@ -1,0 +1,93 @@
+/* finerd design tokens — from the finerd style guide (finerd-web, branch dev @ 96a70621, second edition, read 2026-10-29). finerd's own design system. */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces and ink: layers are translucent white over the near-black ground */
+  --finerd-colors-surface-flat: #000202;        /* page ground */
+  --finerd-colors-surface: #ffffff0f;           /* raised glass panel */
+  --finerd-colors-container: #ffffff0d;         /* rows, tonal controls, chips */
+  --finerd-colors-container-variant: #ffffff14; /* hover / selected */
+  --finerd-colors-container-white: #ffffff26;   /* outlined border, chip hover */
+  --finerd-colors-container-black: #00000015;
+  --finerd-colors-stroke-solid: #ffffff1a;      /* hairlines, dividers */
+  --finerd-colors-scrim: #00000099;
+  --finerd-colors-on-surface: #fffffff2;        /* primary text 95% */
+  --finerd-colors-on-surface-high: #ffffff99;   /* secondary values 60% */
+  --finerd-colors-on-surface-variant: #ffffff80;/* labels, headers 50% */
+  --finerd-colors-on-surface-dimmed: #ffffff4d; /* placeholders only 30% */
+
+  /* Brand: teal is the one accent */
+  --finerd-colors-primary-100: #26c3a7;   /* teal text, links, text buttons */
+  --finerd-colors-primary-50: #26c3a780;  /* primary button fill, checked */
+  --finerd-colors-primary-10: #26c3a71a;  /* selected tint */
+
+  /* Alerts (fill + ink pairs). "succsess" is the spelling in code */
+  --finerd-colors-state-succsess: #00e67b1f;  --finerd-colors-state-on-succsess: #00e67b;
+  --finerd-colors-state-error: #fe3a3d1f;     --finerd-colors-state-on-error: #fe3a3d;
+  --finerd-colors-state-warning: #fd8d271f;   --finerd-colors-state-on-warning: #ff763d;
+  --finerd-colors-state-info: #9ab1c912;      --finerd-colors-state-on-info: #ffffff70;
+
+  /* Badges and trends (fill + ink pairs) */
+  --finerd-colors-badges-green: #00e67b26;    --finerd-colors-badges-on-green: #3dffa5;
+  --finerd-colors-badges-red: #ff4d3926;      --finerd-colors-badges-on-red: #ff3b26;
+  --finerd-colors-badges-warning: #ff4b0026;  --finerd-colors-badges-on-warning: #ff763d;
+  --finerd-colors-badges-blue: #0095ff15;     --finerd-colors-badges-on-blue: #3daeff;
+  --finerd-colors-badges-gray: #ffffff26;     --finerd-colors-badges-on-gray: #bfc5ca;
+
+  /* Category hues: the data palette (categories, accounts, chart series) */
+  --finerd-colors-category-yellow: #ffd500;
+  --finerd-colors-category-golden: #ffb710;
+  --finerd-colors-category-orange: #ff981f;
+  --finerd-colors-category-dark-orange: #ff7a2f;
+  --finerd-colors-category-red: #ff6448;
+  --finerd-colors-category-coral: #fe5d70;
+  --finerd-colors-category-pale-pink: #ff549e;
+  --finerd-colors-category-pink: #ee61cf;
+  --finerd-colors-category-violet: #e657ff;
+  --finerd-colors-category-purple: #c76dfe;
+  --finerd-colors-category-dark-purple: #a083fe;
+  --finerd-colors-category-dark-blue: #7d8cfc;
+  --finerd-colors-category-blue: #0f9bff;
+  --finerd-colors-category-pale-blue: #0fafff;
+  --finerd-colors-category-light-blue: #32beff;
+  --finerd-colors-category-turquoise: #33d4ff;
+  --finerd-colors-category-cyan: #33eeff;
+  --finerd-colors-category-aquamarine: #33e6cc;
+  --finerd-colors-category-mint: #33de99;
+  --finerd-colors-category-mind: #33de99; /* typo of mint in code, same value */
+  --finerd-colors-category-light-green: #33d666;
+  --finerd-colors-category-green: #33ce33;
+  --finerd-colors-category-lime: #66d027;
+  --finerd-colors-category-olive: #99d21a;
+  --finerd-colors-category-green-yellow: #ccd40d;
+  --finerd-colors-category-gray: #99aaba;
+  --finerd-colors-category-on-category-white: #fafafa;
+  --finerd-colors-category-on-category-black: #101010;
+
+  /* Type. SF Pro is not embedded (Apple licence): Apple devices render it
+     natively, others fall back to the system UI font. */
+  --font-sans: "SF Pro", "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+
+  /* Spacing */
+  --space-px: 1px; --space-0-5: 2px; --space-1: 4px; --space-2: 8px; --space-2-5: 10px;
+  --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px; --space-12: 48px;
+
+  /* Radius */
+  --radius-sm: 4px; --radius-chip-inner: 2px; --radius-card: 7.22px; --radius-lg: 8px;
+  --radius-xl: 12px; --radius-2xl: 16px; --radius-3xl: 24px; --radius-full: 9999px;
+
+  /* Sizes */
+  --control-sm: 32px; --control-md: 40px; --control-lg: 56px; --row-min: 72px; --tile: 76px;
+
+  /* Elevation: only for things that float (menus, popovers, tooltips) */
+  --finerd-elevation-1: 0 1px 2px 0 #0000004d, 0 1px 3px 1px #00000026;
+  --finerd-elevation-2: 0 1px 2px 0 #0000004d, 0 2px 6px 2px #00000026;
+  --finerd-elevation-3: 0 1px 3px 0 #0000004d, 0 4px 8px 3px #00000026;
+  --finerd-elevation-4: 0 2px 3px 0 #0000004d, 0 6px 10px 4px #00000026;
+  --finerd-elevation-5: 0 4px 4px 0 #0000004d, 0 8px 12px 6px #00000026;
+
+  /* Glass rim gradient (1px border drawn on ::before) */
+  --glass-rim: linear-gradient(147.14deg, #ffffff0d 0%, #ffffff04 31.25%, #ffffff04 69.23%, #ffffff0d 100%);
+  --glass-rim-variant: linear-gradient(147.14deg, #ffffff4d 0%, #ffffff1a 31.25%, #ffffff1a 69.23%, #ffffff4d 100%);
+}

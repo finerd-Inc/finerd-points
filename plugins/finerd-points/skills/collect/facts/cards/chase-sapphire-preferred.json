@@ -1,0 +1,314 @@
+{
+  "schema": "finerd-points/card@1",
+  "id": "chase-sapphire-preferred",
+  "name": "Chase Sapphire Preferred Card",
+  "issuer": "Chase",
+  "country": "US",
+  "segment": "personal",
+  "currency": "USD",
+  "rewards_program": "chase-ultimate-rewards",
+  "rule_version": "2026-11-02",
+  "checked_on": "2026-11-02",
+  "annual_fee": [
+    {
+      "amount": 95,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Unchanged by the 2026-06-15 refresh; the original effective date of the current $95 fee was not found.",
+      "sources": [
+        "C1",
+        "C4"
+      ]
+    }
+  ],
+  "benefits": [
+    {
+      "id": "chase-travel-hotel-credit",
+      "name": "Chase Travel hotel credit",
+      "kind": "statement_credit",
+      "amount": 100,
+      "period": "card_year",
+      "annual_max": 100,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "Hotel accommodation booked through Chase Travel; the credited portion does not earn points.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "CHASE TRAVEL"
+        ],
+        "posting_lag_days": 28
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Per account anniversary year. Typically posts in about 3 business days; allow up to 4 weeks. Older sources say $50; current Chase terms support $100. Older sources say $50; current Chase terms say $100 per anniversary year. The catalog vouches only for terms from 2026-06-15.",
+      "sources": [
+        "C1",
+        "C2",
+        "C3"
+      ]
+    },
+    {
+      "id": "global-entry-tsa-nexus",
+      "name": "Global Entry / TSA PreCheck / NEXUS credit",
+      "kind": "statement_credit",
+      "amount": 120,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "No separate activation.",
+      "qualifying": "Eligible application fee charged to the card.",
+      "evidence": "statement_credit",
+      "match": {
+        "keywords": [
+          "GLOBAL ENTRY",
+          "TSA",
+          "NEXUS"
+        ]
+      },
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Up to $120, available once every 4 years. Allow 1-2 billing cycles for the credit.",
+      "sources": [
+        "C1",
+        "C2",
+        "C4"
+      ]
+    },
+    {
+      "id": "apple-tv",
+      "name": "Apple TV subscription",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Activate through Chase by 2026-12-31.",
+      "qualifying": "Eligible Apple TV subscription; detailed terms give an $8 a month Apple One adjustment for qualifying existing subscribers.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "One complimentary year, not a replenishing annual credit. Chase advertises a $180 value and other sources use different dollar estimates; the real benefit is a year of subscription access, not $180 in cash or a statement credit.",
+      "sources": [
+        "C1",
+        "C6"
+      ]
+    },
+    {
+      "id": "dashpass",
+      "name": "DoorDash DashPass",
+      "kind": "membership_credit",
+      "amount": null,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Link and activate an eligible card by 2029-12-31.",
+      "qualifying": "Eligible DoorDash and Caviar orders; minimums apply.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Runs through 2029-12-31, or 12 months from activation if that is longer, under the detailed terms. Older pages say 2027.",
+      "sources": [
+        "C1",
+        "C6"
+      ]
+    },
+    {
+      "id": "doordash-nonrestaurant-discount",
+      "name": "DoorDash nonrestaurant discount",
+      "kind": "other",
+      "amount": 10,
+      "period": "month",
+      "annual_max": 120,
+      "carryover": false,
+      "enrollment": "required",
+      "enrollment_how": "Needs an active eligible DashPass; apply the promotion.",
+      "qualifying": "Eligible groceries, retail and other nonrestaurant orders.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2029-12-31",
+      "note": "Calendar month, no rollover. Applied at checkout, not as a statement credit.",
+      "sources": [
+        "C1",
+        "C6"
+      ]
+    },
+    {
+      "id": "lyft-earnings",
+      "name": "Lyft partner earnings",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Pay with the card.",
+      "qualifying": "Eligible Lyft products and services: 5x total points.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2027-09-30",
+      "note": "Paid as Ultimate Rewards points.",
+      "sources": [
+        "C1",
+        "C6"
+      ]
+    },
+    {
+      "id": "peloton-earnings",
+      "name": "Peloton partner earnings",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Pay with the card.",
+      "qualifying": "Eligible equipment and accessory purchases over $150: 5x total points on up to $5,000, 25,000 total points.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": "2025-04-01",
+      "effective_to": "2027-12-31",
+      "note": "An offer-period limit, not an annual cap. Chase supports 25,000 total points: 20,000 incremental plus 5,000 base points; '25,000 bonus points' is imprecise. Paid as Ultimate Rewards points.",
+      "sources": [
+        "C1",
+        "C6"
+      ]
+    },
+    {
+      "id": "legacy-anniversary-bonus",
+      "name": "Legacy anniversary bonus (final payout)",
+      "kind": "other",
+      "amount": null,
+      "period": "one_time",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Automatic.",
+      "qualifying": "Applicable pre-refresh accounts and eligible purchases through the cutoff: 10% of eligible purchase dollars, paid as points.",
+      "evidence": "program_account",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": "2026-10-01",
+      "note": "Earning ended 2026-10-01; the final payout is due by 2027-01-31 for eligible legacy accounts. Older reviews describe an ongoing 10% annual benefit.",
+      "sources": [
+        "C1",
+        "C5"
+      ]
+    },
+    {
+      "id": "points-boost-transfer-access",
+      "name": "Points Boost / transfer access",
+      "kind": "other",
+      "amount": null,
+      "period": "ongoing",
+      "annual_max": null,
+      "carryover": false,
+      "enrollment": "not_required",
+      "enrollment_how": "Use the Chase Travel or transfer flow.",
+      "qualifying": "Selected travel offers and transfer partners; redemption value varies.",
+      "evidence": "none",
+      "match": null,
+      "shared_group": null,
+      "effective_from": null,
+      "effective_to": null,
+      "note": "Transfers to Hyatt are 4 Chase points to 3 Hyatt points from 2026-10-01; older sources show 1:1.",
+      "sources": [
+        "C1",
+        "C2",
+        "C3",
+        "C5"
+      ]
+    }
+  ],
+  "certificates": [],
+  "thresholds": [
+    {
+      "id": "peloton-5k-cap",
+      "spend": 5000,
+      "period": "one_time",
+      "unlocks": "5x total points on up to $5,000 of eligible Peloton purchases during the offer period (25,000 total points); an earning limit, not an annual benefit.",
+      "sources": [
+        "C1",
+        "C6"
+      ]
+    }
+  ],
+  "disagreements": [],
+  "upcoming_changes": [
+    {
+      "effective_from": "2027-01-31",
+      "summary": "Deadline for the final legacy anniversary-bonus points payout to eligible legacy accounts.",
+      "sources": [
+        "C1",
+        "C5"
+      ]
+    }
+  ],
+  "sources": {
+    "C1": {
+      "title": "Sapphire Preferred application and detailed offer terms",
+      "url": "https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "C2": {
+      "title": "Chase Sapphire Preferred review",
+      "url": "https://thepointsguy.com/credit-cards/reviews/chase-sapphire-preferred-review/",
+      "publisher": "The Points Guy",
+      "kind": "review",
+      "published": "2026-07-18",
+      "checked_on": "2026-11-02"
+    },
+    "C3": {
+      "title": "Chase Sapphire Preferred full review",
+      "url": "https://www.nerdwallet.com/credit-cards/reviews/chase-sapphire-preferred",
+      "publisher": "NerdWallet",
+      "kind": "review",
+      "published": null,
+      "checked_on": "2026-11-02"
+    },
+    "C4": {
+      "title": "Chase announcement of the new Sapphire Preferred",
+      "url": "https://media.chase.com/news/Meet-the-New-Chase-Sapphire-Preferred",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": "2026-06-15",
+      "checked_on": "2026-11-02"
+    },
+    "C5": {
+      "title": "Sapphire Preferred June 2026 update: new benefits",
+      "url": "https://www.nerdwallet.com/credit-cards/news/chase-sapphire-preferred-june-2026-update-new-benefits",
+      "publisher": "NerdWallet",
+      "kind": "review",
+      "published": "2026-10-21",
+      "checked_on": "2026-11-02"
+    },
+    "C6": {
+      "title": "Chase Sapphire Preferred cardholder benefits",
+      "url": "https://www.chase.com/sapphire-cards/personal/preferred",
+      "publisher": "Chase",
+      "kind": "issuer",
+      "published": null,
+      "checked_on": "2026-11-02"
+    }
+  },
+  "terms_from": "2026-06-15"
+}
